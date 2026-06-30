@@ -1,0 +1,14 @@
+// ==UserScript==
+// @name                Sugar Cube Cheats
+// @namespace           kinuseka.local
+// @version             1.0.0
+// @description         User-friendly cheat panel for Degrees of Lewdity.
+// @author              Kinuseka
+// @match               https://eltirosto.github.io/Degrees-of-Lewdity-Chinese-Localization/*
+// @match               *://*/*Degrees*Lewdity*.html*
+// @match               file:///*Degrees*Lewdity*.html*
+// @grant               unsafeWindow
+// @run-at              document-idle
+// @sandbox             raw
+// ==/UserScript==
+

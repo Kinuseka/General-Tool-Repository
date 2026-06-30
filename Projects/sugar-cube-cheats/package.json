@@ -1,0 +1,15 @@
+{
+  "name": "dol-cheats-root-international",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Root-level international userscript project based on Degrees-of-Lewdity cheats mod.",
+  "scripts": {
+    "build:gm": "webpack -c webpack.gm.config.js"
+  },
+  "devDependencies": {
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.9.2",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
+  }
+}
