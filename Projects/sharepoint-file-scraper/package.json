@@ -1,0 +1,16 @@
+{
+  "name": "sharepoint-pdf-scraper",
+  "version": "1.0.0",
+  "description": "Download files from SharePoint / OneDrive shared links (viewer read, Stream transcode)",
+  "type": "module",
+  "scripts": {
+    "start": "node scrape-shr.mjs",
+    "scrape": "node scrape-shr.mjs"
+  },
+  "keywords": ["sharepoint", "onedrive", "download", "playwright"],
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "playwright": "^1.64.0"
+  }
+}

@@ -1,0 +1,26 @@
+# Local login / browser state (never publish)
+auth-state.json
+.browser-profile/
+
+# Dependencies
+node_modules/
+
+# Local URL lists (often contain full share links)
+share-url.txt
+url.txt
+*.url
+
+# Downloads / partial files
+*.part
+*.crdownload
+
+# Env / secrets
+.env
+.env.*
+*.pem
+*.pfx
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
