@@ -1,0 +1,17 @@
+main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 16px; }
+main > p { margin: 0; }
+.panel { display: flex; flex-direction: column; gap: 12px; }
+label { display: flex; flex-direction: column; gap: 4px; color: var(--foam); }
+label.switch { flex-direction: row; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.note { margin: 0; color: var(--drift); font-size: 17px; }
+code { color: var(--cyan); font-family: inherit; }
+.note.warn { color: var(--pink); }
+.note em { color: var(--foam); font-style: normal; }
+input[type="range"] { accent-color: var(--cyan); width: 100%; }
+.actions { display: flex; gap: 8px; align-items: center; }
+.actions.bar { position: sticky; bottom: 0; padding: 10px 0; background: var(--abyss); }
+#msg { flex: 1; min-width: 0; letter-spacing: 0.04em; }
+#msg.ok { color: var(--cyan); }
+#msg.err { color: var(--pink); }
+@media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }

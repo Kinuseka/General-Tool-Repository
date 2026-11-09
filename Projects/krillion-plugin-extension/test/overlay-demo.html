@@ -1,0 +1,60 @@
+<!doctype html>
+<!-- Manual harness: open this file in any browser to try the floating window without the extension.
+     It drives the real src/overlay.js with fake handlers and logs every callback below. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Overlay demo</title>
+  <style>
+    body { margin: 0; min-height: 100vh; background: linear-gradient(#0a2a4a, #050a14); color: #e8f1ff; font: 16px ui-monospace, monospace; }
+    #log { position: fixed; left: 12px; bottom: 12px; width: 420px; max-height: 40vh; overflow: auto; margin: 0; padding: 8px; background: #0008; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <pre id="log">callbacks:
+</pre>
+  <script src="../src/overlay.js"></script>
+  <script>
+    const log = (s) => (document.getElementById('log').textContent += s + '\n');
+    // Rows as they look after the game has answered: act = rarity the GAME gave, out = what it said.
+    let items = [
+      { text: 'Missouri', tier: 'plankton', why: 'Mississippi is its east border' },
+      { text: 'Oregon', tier: 'rare', act: 'plankton', out: 'accepted', v: 'good', why: 'Pacific coast state' }, // predicted rare, game said plankton
+      { text: 'Maine', tier: 'rare', out: 'miss', v: 'bad', why: 'New England state' }, // game rejected it
+      { text: 'Idaho', tier: 'rare', act: 'rare', out: 'accepted', v: 'good', why: 'Rocky Mountain state' }, // prediction was right
+      { text: 'Alaska', tier: 'deepcut', out: 'taken', why: 'Pacific state' }, // valid, but someone used it first
+      { text: 'Hawaii', tier: 'krillion' },
+    ];
+    const ov = KrillionOverlay.createOverlay({
+      onVerdict: (item, v) => {
+        log(`onVerdict ${item.text} -> ${v}`);
+        const it = items.find((x) => x.text === item.text);
+        if (v) it.v = v; else delete it.v;
+        ov.setSuggestions(items);
+      },
+      onMore: () => {
+        log('onMore');
+        ov.setMore({ visible: true, busy: true });
+        setTimeout(() => {
+          items.push({ text: 'Montana', tier: 'schooler' });
+          ov.setSuggestions(items);
+          ov.setMore({ visible: true, busy: false });
+        }, 500);
+      },
+      onRefresh: () => log('onRefresh (new batch)'),
+      onPower: (on) => log(`onPower ${on}`),
+      onCollapse: (c) => log(`onCollapse ${c}`),
+      onSettings: () => log('onSettings'),
+      onMove: (p) => log(`onMove ${Math.round(p.x)},${Math.round(p.y)}`),
+    });
+    ov.setPosition({ x: 40, y: 30 });
+    ov.setQuestion({ text: 'Name a U.S. state entirely west of the Mississippi River', label: 'Party YQVN · #2' });
+    ov.setSuggestions(items);
+    ov.setMore({ visible: true, busy: false });
+    ov.setIdentity('Clock'); // the quiet "playing as <name>" line
+    ov.setFlash('Game over · learned 3 lessons from it', 10 * 60 * 1000); // the short-lived end-of-game note
+    ov.setVisible(true);
+    window.__ov = ov;
+  </script>
+</body>
+</html>

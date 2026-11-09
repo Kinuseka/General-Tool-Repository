@@ -1,0 +1,103 @@
+/* Krillion theme, taken from krillion.io's own CSS tokens.
+   Dark only: the app has a single underwater look.
+   Font: VT323 (SIL OFL). It is used if installed or if fonts/VT323-Regular.woff2 is present;
+   otherwise the stack falls back to the system monospace. */
+@font-face {
+  font-family: "VT323";
+  src: local("VT323"), local("VT323-Regular"), url("fonts/VT323-Regular.woff2") format("woff2");
+  font-display: swap;
+}
+
+/* When VT323 is not installed the page falls back to the system monospace, which is much wider and taller
+   than the pixel font the sizes below were chosen for. Shrinking that fallback keeps the layout, and how
+   much fits on a line, close to the intended look. (If VT323 is present this has no effect.) */
+@font-face {
+  font-family: "VT323 Fallback";
+  src: local("Consolas"), local("Menlo"), local("DejaVu Sans Mono"), local("Liberation Mono"), local("Courier New");
+  size-adjust: 82%;
+}
+
+:root {
+  color-scheme: dark;
+  --abyss: #050a14;
+  --shallow: #101d33;
+  --line: #1b2c47;
+  --foam: #e8f1ff;
+  --drift: #7d93b8;
+  --cyan: #4de3ff;
+  --pink: #ff5d8f;
+  --hair: #7d93b838;
+  --tier-plankton: #8fa3c4;
+  --tier-schooler: #4de3ff;
+  --tier-rare: #ff5252;
+  --tier-deepcut: #9d7bff;
+  --tier-krillion: #ffd166;
+  --font: VT323, "VT323 Fallback", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --pixel: polygon(0 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0, calc(100% - 6px) 0, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px));
+}
+
+* { box-sizing: border-box; }
+
+/* The page background lives on <html>, not <body>: a background on <body> is repeated whenever the content is
+   taller than the body's box (a long page, or a scrolling popup), which showed up as a lighter band starting
+   partway down. One solid colour everywhere, with the soft glow only once, at the top. */
+html {
+  background: linear-gradient(#0a1830, var(--abyss) 220px) top left / 100% 220px no-repeat, var(--abyss);
+  min-height: 100%;
+}
+body {
+  margin: 0;
+  background: transparent;
+  color: var(--foam);
+  font: 19px/1.15 var(--font);
+}
+
+h1, h2 { font-weight: 400; text-transform: uppercase; letter-spacing: 0.14em; margin: 0; }
+h1 { color: var(--cyan); font-size: 24px; }
+h2 { color: var(--drift); font-size: 17px; }
+.muted { color: var(--drift); }
+[hidden] { display: none !important; }
+
+/* pixel-cut button, as .btn-quiet in the app */
+.btn {
+  font: inherit; font-size: 17px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
+  color: #dbe5f5; border: 0; border-radius: 0; padding: 7px 14px; clip-path: var(--pixel);
+  background: linear-gradient(#24365a 0 4px, var(--shallow) 4px calc(100% - 4px), #070d1a calc(100% - 4px) 100%);
+  box-shadow: inset 0 0 0 2px #040810d9;
+}
+.btn:hover { color: var(--cyan); }
+.btn:active { transform: translateY(2px); }
+.btn:disabled { opacity: 0.4; cursor: default; transform: none; color: #dbe5f5; }
+.btn.primary { color: var(--abyss); background: linear-gradient(#8ff0ff 0 4px, var(--cyan) 4px calc(100% - 4px), #2aa9c4 calc(100% - 4px) 100%); }
+.btn.primary:hover { color: var(--abyss); filter: brightness(1.1); }
+.btn.danger { color: var(--pink); }
+.btn.danger.armed { color: var(--abyss); background: var(--pink); }
+
+.panel {
+  background: #080f1cd6;
+  box-shadow: 0 0 0 2px #060d1a, 0 0 0 4px var(--hair);
+  padding: 12px 14px;
+}
+
+input[type="text"], input[type="password"], input[type="number"], input[type="url"], select, textarea {
+  width: 100%; font: inherit; font-size: 18px; color: var(--foam);
+  background: #060d1a; border: 0; border-radius: 0; padding: 6px 8px;
+  box-shadow: inset 0 0 0 2px var(--line);
+}
+textarea { resize: vertical; min-height: 120px; line-height: 1.2; }
+input:focus, select:focus, textarea:focus { outline: 0; box-shadow: inset 0 0 0 2px var(--cyan); }
+.btn:focus-visible, .tab:focus-visible, .switch input:focus-visible + .track { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* square pixel switch */
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+.track {
+  flex: none; position: relative; width: 38px; height: 18px; background: #060d1a;
+  box-shadow: inset 0 0 0 2px var(--line); transition: background 0.1s steps(2, end);
+}
+.track::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; background: var(--drift);
+  transition: transform 0.1s steps(2, end);
+}
+.switch input:checked + .track { background: #0d3a47; box-shadow: inset 0 0 0 2px var(--cyan); }
+.switch input:checked + .track::after { background: var(--cyan); transform: translateX(20px); }

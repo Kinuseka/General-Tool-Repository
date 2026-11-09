@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Krillion Question Reader",
+  "version": "0.6.0",
+  "description": "Reads Krillion's daily questions and Puffer Party categories from the page you are playing, and shows AI answer suggestions in a floating window.",
+  "minimum_chrome_version": "111",
+  "permissions": ["storage", "unlimitedStorage"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "action": {
+    "default_title": "Krillion Question Reader",
+    "default_popup": "popup/popup.html"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://krillion.io/*", "https://www.krillion.io/*"],
+      "js": ["src/hook.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://krillion.io/*", "https://www.krillion.io/*"],
+      "js": ["src/core.js", "src/ai-core.js", "src/learn.js", "src/party-data.js", "src/profile.js", "src/summary.js", "src/raw-record.js", "src/overlay.js", "src/bridge.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

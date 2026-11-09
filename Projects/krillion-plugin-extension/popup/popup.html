@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Krillion Question Reader</title>
+  <link rel="stylesheet" href="../ui/theme.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div id="page"><!-- the scroller: the tab bar below sticks to the top of THIS, not of the document -->
+  <header>
+    <div class="top">
+      <h1>Krillion</h1>
+      <button id="openSettings" class="btn" title="API, model, prompt, appearance">Settings</button>
+    </div>
+    <label class="switch" for="overlayEnabled">
+      <span>Floating window <span class="muted">(Alt+K)</span></span>
+      <input type="checkbox" id="overlayEnabled"><span class="track"></span>
+    </label>
+    <label class="switch" for="enabled">
+      <span>AI suggestions</span>
+      <input type="checkbox" id="enabled"><span class="track"></span>
+    </label>
+    <p id="aiHint" class="muted" hidden></p>
+  </header>
+
+  <!-- sticky: stays in view while a long tab scrolls -->
+  <nav class="tabs">
+    <button class="tab active" data-tab="daily">Daily dive</button>
+    <button class="tab" data-tab="party">Puffer Party</button>
+    <button class="tab" data-tab="data">Learning</button>
+  </nav>
+
+  <main>
+    <section id="daily">
+      <div class="row">
+        <select id="dayPick" aria-label="Day"></select>
+        <span id="dayMeta" class="muted"></span>
+      </div>
+      <ol id="dailyList"></ol>
+      <p id="dailyEmpty" class="muted" hidden>Nothing captured yet. Open krillion.io and the day's questions are recorded automatically.</p>
+      <div class="actions">
+        <button id="dailyCopy" class="btn primary">Copy</button>
+        <button id="dailyJson" class="btn">JSON</button>
+        <button id="dailyCsv" class="btn">CSV</button>
+      </div>
+    </section>
+
+    <section id="party" hidden>
+      <p id="partyStatus" class="status"></p>
+      <div id="partyList"></div>
+      <p id="partyEmpty" class="muted" hidden>No categories captured yet. Join or host a room on krillion.io/party; each category is recorded as it appears.</p>
+      <div class="actions">
+        <button id="partyCopy" class="btn primary">Copy</button>
+        <button id="partyJson" class="btn">JSON</button>
+        <button id="partyCsv" class="btn">CSV</button>
+        <button id="partyClear" class="btn danger">Clear</button>
+      </div>
+    </section>
+
+    <section id="data" hidden>
+      <!-- what has been learned, at a glance -->
+      <div id="learnStats" class="kvs"></div>
+
+      <!-- what the AI sees and concludes: closed until you want it -->
+      <div id="learnFolds"></div>
+
+      <div class="actions">
+        <button id="learnedJson" class="btn" title="Download everything learned, as JSON">Export</button>
+        <button id="learnedReset" class="btn danger" title="Forget what the game taught the AI, and your recorded answers">Reset</button>
+      </div>
+
+      <details class="fold" id="fOptions">
+        <summary>Learning options</summary>
+        <div class="foldbody">
+          <label class="switch" for="learnFromGame" title="Reads which answers the game accepted (with their real rarity) or rejected, compares that with the AI's guesses, and feeds the difference back into the prompt. Answers and rarity only; stays on this computer.">
+            <span>Learn from game results</span>
+            <input type="checkbox" id="learnFromGame"><span class="track"></span>
+          </label>
+          <label class="switch" for="reflectAtGameEnd" title="When a game ends a summary is saved. With this on, the AI also reads it (one extra request) and writes lessons for later rounds.">
+            <span>Learn from each finished game</span>
+            <input type="checkbox" id="reflectAtGameEnd"><span class="track"></span>
+          </label>
+          <label class="switch" for="adaptToMe" title="Learns your leanings from the answers the game accepted from you, and favours them when the question allows. Add your own words in Settings.">
+            <span>Suggest answers that fit me</span>
+            <input type="checkbox" id="adaptToMe"><span class="track"></span>
+          </label>
+          <label class="switch" for="collectParty" title="Keeps every party event (answers, rarity, pops, wins) per game so you can export it. Players are salted hashes; names and chat are never stored.">
+            <span>Record party game data</span>
+            <input type="checkbox" id="collectParty"><span class="track"></span>
+          </label>
+          <p class="hint">Hover a switch for what it does. The full explanation is in Settings.</p>
+        </div>
+      </details>
+
+      <details class="fold" id="fParty">
+        <summary>Party dataset <span id="pdCount" class="badge"></span></summary>
+        <div class="foldbody">
+          <div id="pdStats" class="stats"></div>
+          <div class="actions">
+            <button id="pdJson" class="btn primary">JSON</button>
+            <button id="pdCsv" class="btn">CSV</button>
+            <button id="pdClear" class="btn danger">Delete</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="fold" id="fRaw">
+        <summary>Raw websocket recording <span id="rawCount" class="badge"></span></summary>
+        <div class="foldbody">
+          <label class="switch" for="recordRaw">
+            <span>Record raw frames</span>
+            <input type="checkbox" id="recordRaw"><span class="track"></span>
+          </label>
+          <p class="hint warn">Every frame, both directions, unfiltered: includes player names, chat and typing. Local only; the URL is saved without its key and token.</p>
+          <div id="rawStats" class="stats"></div>
+          <ul id="rawList" class="rawlist"></ul>
+          <div class="actions">
+            <button id="rawAll" class="btn primary">Export all</button>
+            <button id="rawClear" class="btn danger">Delete all</button>
+          </div>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <footer class="muted">Never stored: API key in pages, player names, chat, or the party key and token.</footer>
+  </div>
+  <script src="../src/ai-core.js"></script>
+  <script src="../src/learn.js"></script>
+  <script src="../src/profile.js"></script>
+  <script src="../src/raw-record.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

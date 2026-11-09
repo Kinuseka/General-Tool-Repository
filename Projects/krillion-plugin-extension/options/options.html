@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Krillion Question Reader · Settings</title>
+  <link rel="stylesheet" href="../ui/theme.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>Krillion · settings</h1>
+    <p class="muted">Questions are read from the game you are playing and sent to the AI endpoint you choose below. Nothing else is sent.</p>
+
+    <section class="panel">
+      <h2>Show</h2>
+      <label class="switch" for="overlayEnabled"><span>Floating window <span class="muted">(Alt+K toggles it on the page)</span></span><input type="checkbox" id="overlayEnabled"><span class="track"></span></label>
+      <label class="switch" for="enabled"><span>AI suggestions</span><input type="checkbox" id="enabled"><span class="track"></span></label>
+      <label class="switch" for="copyOnClick"><span>Click a suggestion to copy it</span><input type="checkbox" id="copyOnClick"><span class="track"></span></label>
+      <p class="note">With every answer you submit, the game receives how it was entered: keystroke count and timing, and counters for <em>pastes</em> and synthetic input (seen in its websocket traffic). Pasting a copied suggestion registers as a paste. This is your call; turn the switch off and the rows become read-only, so you type answers yourself.</p>
+      <label class="switch" for="dailySingleRequest"><span>Daily dive: one AI request per page load</span><input type="checkbox" id="dailySingleRequest"><span class="track"></span></label>
+      <p class="note">Only the first daily question that appears gets a request, and that request is a single call with no follow-ups for missing answers (it asks for 2 extra to make up for that). The other six wait until you reload, or until you press ↻ or "+ more" on them. A list the extension already remembers is shown without any request. Party rounds are not affected.</p>
+      <label class="switch" for="prefetchDaily"><span>Pre-fetch all 7 daily questions on load <span class="muted">(ignored while the switch above is on)</span></span><input type="checkbox" id="prefetchDaily"><span class="track"></span></label>
+    </section>
+
+    <section class="panel">
+      <h2>AI endpoint <span class="muted">(any OpenAI-compatible API)</span></h2>
+      <label>Base URL
+        <input type="url" id="baseUrl" list="bases" placeholder="https://api.openai.com/v1" autocomplete="off" spellcheck="false">
+      </label>
+      <datalist id="bases">
+        <option value="https://api.openai.com/v1">
+        <option value="https://openrouter.ai/api/v1">
+        <option value="https://api.groq.com/openai/v1">
+        <option value="https://api.together.xyz/v1">
+        <option value="http://localhost:11434/v1">
+        <option value="http://localhost:1234/v1">
+      </datalist>
+      <label>API key <span class="muted">(leave empty for local servers)</span>
+        <input type="password" id="apiKey" autocomplete="off" spellcheck="false">
+      </label>
+      <label>Model
+        <input type="text" id="model" placeholder="gpt-4o-mini" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="grid">
+        <label>Suggestions per question <span class="muted">(3–15)</span>
+          <input type="number" id="count" min="3" max="15" step="1">
+        </label>
+        <label>Temperature <span class="muted">(blank = default)</span>
+          <input type="number" id="temperature" min="0" max="2" step="0.1">
+        </label>
+      </div>
+      <p class="note">The key is stored unencrypted in this browser profile and only the extension's background worker uses it. The page never sees it. Saving asks Chrome to allow this extension to contact the endpoint's host.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Your leanings</h2>
+      <label class="switch" for="adaptToMe"><span>Suggest answers that fit me</span><input type="checkbox" id="adaptToMe"><span class="track"></span></label>
+      <p class="note">The extension records the answers the game accepted from <em>you</em> (daily dive, and party rounds where it can tell which player you are) and flags the ones the AI never suggested. Those are sent to the AI as examples of what you know that it misses, with an instruction to follow the same leanings when the prompt allows: if your own answers lean East Asian, it tries East Asian answers where the question fits, mixed with the usual ones. It never overrides the question's constraints. Needs "Learn from game results" below to be on.</p>
+      <label>In your own words <span class="muted">(optional)</span>
+        <textarea id="interests" rows="3" maxlength="400" placeholder="e.g. I'm from the Philippines and know Japanese and Korean pop culture, food and games." spellcheck="false"></textarea>
+      </label>
+      <p class="note warn">Your recent answers and this text are sent to the AI endpoint you configured above, along with each question.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Learning &amp; data</h2>
+      <label class="switch" for="learnFromGame"><span>Learn from game results</span><input type="checkbox" id="learnFromGame"><span class="track"></span></label>
+      <p class="note">The game reports every answer in a party round: accepted ones with their real rarity, rejected ones with a reason. The extension compares that with the tier the AI predicted and tells the AI where its labels are off, what the game rejected before on the same prompt, and whether rejected answers run longer than accepted ones. It cannot retrain the model; it measures and corrects in the prompt. Answers and rarity only, stored on this computer, kept across sessions.</p>
+      <label class="switch" for="reflectAtGameEnd"><span>Learn from each finished game</span><input type="checkbox" id="reflectAtGameEnd"><span class="track"></span></label>
+      <p class="note">When a party game ends (a win, or the room going back to the lobby), or you finish the daily dive, the extension builds a summary: what the game accepted and rejected per category, how your suggestions fared, accepted answers the AI never suggested (its blind spots), and your own results. The summary is always saved and boiled down to short conclusions that go into later requests. With this switch on it is also sent to your AI endpoint in <em>one extra request per game</em>, and the lessons the model writes are kept and used the same way. Only answers the game accepted, the AI's own suggestions and your own answers are listed; other players' typing is counted, never quoted.</p>
+      <label class="switch" for="collectParty"><span>Record party game data <span class="muted">(off by default)</span></span><input type="checkbox" id="collectParty"><span class="track"></span></label>
+      <p class="note">Keeps every party event per game (answers, rarity, pops, wins) so you can export it as JSON or CSV from the toolbar popup's Learning tab. Players are stored as salted hashes; names and chat are never stored. Turning either switch off stops the extension reading those events.</p>
+      <label class="switch" for="recordRaw"><span>Record raw websocket frames <span class="muted">(off by default)</span></span><input type="checkbox" id="recordRaw"><span class="track"></span></label>
+      <p class="note warn">A full, unfiltered recording of the party websocket for analysis: every frame in both directions, byte for byte, plus connection open/close events. It includes player names, chat and what everyone is typing, because that is what the game sends. Stored only on this computer; the connection URL is saved without its query string (player key and guest token), and any field named key/token is replaced by "[redacted]". Export as JSON Lines from the toolbar popup's Learning tab. Up to about 200 MB are kept; the oldest recordings are dropped first.</p>
+      <div class="actions"><button type="button" id="resetLearned" class="btn danger">Reset learned data</button></div>
+    </section>
+
+    <section class="panel">
+      <h2>Session memory</h2>
+      <p class="note">For 12 hours the extension remembers, per question, every suggestion it showed and your ✓ / ✗ marks. It uses that to avoid repeating answers, to tell the AI what the game accepted or rejected (for this question and recent ones), and to restore a list after a page reload without another API call. Stored only in this browser profile.</p>
+      <div class="actions"><button type="button" id="resetMemory" class="btn danger">Reset session memory</button></div>
+    </section>
+
+    <section class="panel">
+      <h2>Window</h2>
+      <label>Opacity <span id="opacityVal" class="muted"></span>
+        <input type="range" id="opacity" min="20" max="100" step="5">
+      </label>
+    </section>
+
+    <section class="panel">
+      <h2>System prompt</h2>
+      <p class="note">Controls how the AI answers. The default asks for a JSON object, <code>{"answers":[{"answer":"…","tier":"…"}]}</code>, and the extension also turns on the API's JSON mode. Keep that shape or the window can't read the reply or colour the tiers. <code>{count}</code> becomes the number above, and <code>{example}</code> becomes a sample reply with exactly that many answers (models copy the length of the example).</p>
+      <textarea id="systemPrompt" spellcheck="false"></textarea>
+      <div class="actions"><button type="button" id="resetPrompt" class="btn">Reset prompt</button></div>
+    </section>
+
+    <div class="actions bar">
+      <button type="button" id="save" class="btn primary">Save</button>
+      <button type="button" id="test" class="btn">Save &amp; test</button>
+      <span id="msg" role="status"></span>
+    </div>
+  </main>
+  <script src="../src/ai-core.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
