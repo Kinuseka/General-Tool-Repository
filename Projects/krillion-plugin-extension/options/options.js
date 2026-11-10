@@ -83,3 +83,16 @@ $('#resetPrompt').addEventListener('click', () => ($('#systemPrompt').value = DE
 $('#opacity').addEventListener('input', () => ($('#opacityVal').textContent = `${$('#opacity').value}%`));
 
 store.get('settings').then(({ settings }) => fill({ ...DEFAULTS, ...settings }));
+
+// Is the local word list installed? (data/words.txt, loaded by the background worker)
+chrome.runtime
+  .sendMessage({ type: 'dict-status' })
+  .then((r) => {
+    $('#dictStatus').textContent =
+      r && r.loaded
+        ? `Installed: ${r.words.toLocaleString()} words.`
+        : 'Not installed: put a word list in data/words.txt (one word per line) and reload the extension. Until then English-word prompts are answered without a dictionary.';
+  })
+  .catch(() => {
+    $('#dictStatus').textContent = 'Could not check the dictionary.';
+  });

@@ -1,8 +1,33 @@
 // Service worker. Holds the API key and makes the AI request, so the key never
 // enters the krillion.io page and the request isn't subject to the page's CORS.
-importScripts('ai-core.js');
+importScripts('ai-core.js', 'dictionary.js');
 
-const { DEFAULTS, runSuggest, runReflect, originPattern } = self.KrillionAI;
+const { DEFAULTS, runSuggest, runReflect, originPattern, isEnglishWordPrompt } = self.KrillionAI;
+const { Dictionary, grounding } = self.KrillionDict;
+
+// The local English dictionary (data/words.txt, one word per line), loaded on first use. Missing or empty file:
+// null, and the feature is simply off: English-word prompts are then answered without a dictionary.
+let dictPromise = null;
+function loadDict() {
+  dictPromise ||= (async () => {
+    try {
+      const res = await fetch(chrome.runtime.getURL('data/words.txt'));
+      if (!res.ok) return null;
+      const dict = new Dictionary(await res.text());
+      return dict.size ? dict : null;
+    } catch (_) {
+      return null;
+    }
+  })();
+  return dictPromise;
+}
+
+// For an English-word prompt only: a validator (exists / partly exists / no, plus the prompt's own
+// "starting with ..." pattern) and real candidate words. Any other prompt gets neither.
+async function dictionaryFor(question, exclude) {
+  // only load the word list for a prompt that is about English words
+  return grounding(isEnglishWordPrompt(question) ? await loadDict() : null, question, exclude);
+}
 
 async function getSettings(override) {
   if (override) return { ...DEFAULTS, ...override };
@@ -43,14 +68,20 @@ chrome.runtime.onConnect.addListener((port) => {
     try {
       const settings = await getSettings();
       await assertAccess(settings.baseUrl);
+      const question = String(msg.question || '').slice(0, 400);
+      const exclude = strs(msg.exclude, 60);
+      const { validate, candidates } = await dictionaryFor(question, exclude);
       await runSuggest({
         settings,
-        question: String(msg.question || '').slice(0, 400),
+        question,
+        validate,
+        candidates,
         want: Math.min(15, Math.max(1, Math.round(Number(msg.want)) || 0)) || undefined,
-        exclude: strs(msg.exclude, 60),
+        exclude,
         feedback: sanitizeFeedback(msg.feedback),
         krillionTaken: msg.krillionTaken === true,
         single: msg.single === true,
+        rarest: msg.rarest === true,
         signal: controller.signal,
         onSuggestion: (s) => port.postMessage({ type: 'suggestion', suggestion: s }),
       });
@@ -73,6 +104,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'open-options') {
     chrome.runtime.openOptionsPage();
     return false;
+  }
+  if (msg.type === 'dict-status') {
+    loadDict().then((d) => sendResponse({ loaded: !!d, words: d ? d.size : 0 }));
+    return true; // async response
   }
   // End of a game: one non-streamed request asking the model for lessons from the round summary.
   if (msg.type === 'reflect') {

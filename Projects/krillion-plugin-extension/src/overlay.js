@@ -123,11 +123,12 @@
     const list = h('ul', { class: 'list' });
     const status = h('p', { class: 'status' });
     const moreBtn = h('button', { type: 'button', hidden: '', title: 'Add more answers (never repeats what is already listed)', text: '+ more' });
+    const rarestBtn = h('button', { type: 'button', hidden: '', title: 'Ask the AI for the single rarest valid answer it can find (adds one row, never repeats)', text: 'find rarest' });
     const cfg = h('button', { type: 'button', hidden: '', text: 'Open settings' });
     const flash = h('p', { class: 'flash', hidden: '' });
     let flashTimer = null;
     const me = h('p', { class: 'me', hidden: '', title: 'Recognised from your Krillion session. Shown only here: never stored, recorded or sent to the AI.' });
-    const body = h('div', { class: 'body' }, chips, q, list, status, h('div', { class: 'foot' }, moreBtn, cfg), flash, me);
+    const body = h('div', { class: 'body' }, chips, q, list, status, h('div', { class: 'foot' }, moreBtn, rarestBtn, cfg), flash, me);
     const win = h('div', { class: 'win', hidden: '' }, bar, body);
     shadow.append(style, win);
 
@@ -185,6 +186,7 @@
     btnOff.addEventListener('click', () => handlers.onPower && handlers.onPower(false));
     cfg.addEventListener('click', () => handlers.onSettings && handlers.onSettings());
     moreBtn.addEventListener('click', () => handlers.onMore && handlers.onMore());
+    rarestBtn.addEventListener('click', () => handlers.onRarest && handlers.onRarest());
 
     // ---- suggestions ----
     async function copy(li, text) {
@@ -211,13 +213,16 @@
       const dot = h('span', { class: 'dot' });
       dot.style.background = TIER_COLORS[s.tier] || '#3d4f6e';
       // "≈": the game accepted it, but recorded a different (canonical) term for it.
-      const label = s.out === 'miss' ? 'rejected' : s.out === 'taken' ? 'taken' : `${s.act || s.tier || ''}${s.as ? ' ≈' : ''}`.trim();
+      const label = s.out === 'miss' ? 'rejected' : s.out === 'taken' ? 'taken' : `${s.act || s.tier || ''}${s.as ? ' ≈' : ''}${s.dict === 'partial' ? ' ◐' : ''}${s.known && !s.out ? ' ◆' : ''}`.trim();
       const copyOn = !handlers.canCopy || handlers.canCopy(); // off: rows are read-only, so answers get typed by hand
       const hint = [
         s.why,
         s.as ? `Accepted: the game counted it as "${s.as}".` : null,
+        s.dict === 'partial' ? 'Dictionary: only part of a word, or a form of one (◐).' : s.dict === 'word' ? 'Dictionary: found.' : null,
         s.out === 'miss' ? 'The game rejected this answer.' : s.out === 'taken' ? 'Valid, but already used this round.' : null,
-        s.act ? `You predicted ${s.tier || '?'}, the game rated it ${s.act}.` : null,
+        s.known ? `◆ The game has accepted this on this prompt before (${s.known}×) and rated it ${s.tier}${s.raw ? `; the AI guessed ${s.raw}` : ''}.` : null,
+        !s.known && s.raw ? `The AI guessed ${s.raw}; adjusted to ${s.tier} from how the game has rated its labels so far.` : null,
+        s.act ? `You predicted ${s.raw || s.tier || '?'}, the game rated it ${s.act}.` : null,
         copyOn ? 'click to copy' : null,
       ].filter(Boolean).join('  ·  ');
       const yes = h('button', { type: 'button', class: `vb yes${s.v === 'good' ? ' on' : ''}`, title: 'Correct: the game accepted it (click again to undo)', text: '✓' });
@@ -254,6 +259,7 @@
         status.className = 'status';
         cfg.hidden = true;
         moreBtn.hidden = true;
+        rarestBtn.hidden = true;
       },
       setSuggestions(items) {
         list.replaceChildren(...items.map(item));
@@ -271,6 +277,8 @@
       setMore({ visible, busy }) {
         moreBtn.hidden = !visible;
         moreBtn.disabled = !!busy;
+        rarestBtn.hidden = !visible;
+        rarestBtn.disabled = !!busy;
       },
       // items: [{label}], active: index; onSelect(i). Pass null to hide.
       setChips(items, active, onSelect) {

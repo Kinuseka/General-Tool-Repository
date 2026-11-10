@@ -280,6 +280,14 @@ function renderData() {
     } else if (s.questions) {
       rows.push(kv('Rarity', 'no suggestion rated yet'));
     }
+    if (s.accuracy.length) {
+      const last = s.accuracy[s.accuracy.length - 1];
+      const before = s.accuracy.slice(0, -1);
+      const avgBefore = before.length ? Math.round(before.reduce((n, a) => n + a.pct, 0) / before.length) : null;
+      const delta = avgBefore === null ? 0 : last.pct - avgBefore;
+      const trend = avgBefore === null ? 'first game measured' : `${delta >= 5 ? '↑' : delta <= -5 ? '↓' : '→'} vs ${avgBefore}% before`;
+      rows.push(kv('Accuracy', `${last.pct}% last game`, { dim: ` · ${trend} · ${s.accuracy.length} game${s.accuracy.length === 1 ? '' : 's'}`, warn: last.pct < 40 }));
+    }
     if (s.avgWordsAccepted !== null && s.avgWordsRejected !== null) {
       const longer = s.avgWordsRejected - s.avgWordsAccepted >= 0.6;
       rows.push(kv('Length', `accepted ${s.avgWordsAccepted.toFixed(1)} words`, { dim: ` · rejected ${s.avgWordsRejected.toFixed(1)}${longer ? ' (longer)' : ''}`, warn: longer }));
@@ -287,6 +295,7 @@ function renderData() {
     if (mine.total || mine.ignored) {
       rows.push(kv('You', `${mine.total} answers`, { dim: ` · ${mine.niche} the AI missed${mine.ignored ? ` · ${mine.ignored} older ignored` : ''}` }));
     }
+    if (s.repeated) rows.push(kv('Repeats', `${s.repeated} prompt${s.repeated === 1 ? '' : 's'} seen again`, { dim: ` · AI suggestions: ${s.suggestedOk} accepted · ${s.suggestedBad} rejected` }));
     if (s.aliases) rows.push(kv('Typed forms', String(s.aliases), { dim: ' accepted as another term' }));
     if (s.games) rows.push(kv('Games', `${s.games} summarised`));
   }
@@ -310,6 +319,17 @@ function renderData() {
     list.className = 'rows';
     for (const m of mine.recentNiche) list.append(listRow('+', '', m.a, m.tier || '', m.q));
     folds.push(fold('missed', 'Answers the AI missed', mine.niche, [list]));
+  }
+  if (s.ledger && s.ledger.length) {
+    const list = document.createElement('ul');
+    list.className = 'rows';
+    for (const l of s.ledger) {
+      const bits = [`${l.known} known`];
+      if (l.sug) bits.push(`AI ${l.sugOk}/${l.sug} ok`);
+      if (l.mine || l.mineBad) bits.push(`you ${l.mine} ok, ${l.mineBad} rejected`);
+      list.append(listRow(`${l.seen}×`, '', l.q, bits.join(' · '), ''));
+    }
+    folds.push(fold('ledger', 'Prompts seen again', s.repeated, [list]));
   }
   const told = document.createElement('ul');
   told.className = 'rows plain';

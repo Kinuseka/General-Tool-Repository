@@ -227,13 +227,16 @@
       const dot = h('span', { class: 'dot' });
       dot.style.background = TIER_COLORS[s.tier] || '#3d4f6e';
       // "≈": the game accepted it, but recorded a different (canonical) term for it.
-      const label = s.out === 'miss' ? 'rejected' : s.out === 'taken' ? 'taken' : `${s.act || s.tier || ''}${s.as ? ' ≈' : ''}`.trim();
+      const label = s.out === 'miss' ? 'rejected' : s.out === 'taken' ? 'taken' : `${s.act || s.tier || ''}${s.as ? ' ≈' : ''}${s.dict === 'partial' ? ' ◐' : ''}${s.known && !s.out ? ' ◆' : ''}`.trim();
       const copyOn = !handlers.canCopy || handlers.canCopy(); // off: rows are read-only, so answers get typed by hand
       const hint = [
         s.why,
         s.as ? `Accepted: the game counted it as "${s.as}".` : null,
+        s.dict === 'partial' ? 'Dictionary: only part of a word, or a form of one (◐).' : s.dict === 'word' ? 'Dictionary: found.' : null,
         s.out === 'miss' ? 'The game rejected this answer.' : s.out === 'taken' ? 'Valid, but already used this round.' : null,
-        s.act ? `You predicted ${s.tier || '?'}, the game rated it ${s.act}.` : null,
+        s.known ? `◆ The game has accepted this on this prompt before (${s.known}×) and rated it ${s.tier}${s.raw ? `; the AI guessed ${s.raw}` : ''}.` : null,
+        !s.known && s.raw ? `The AI guessed ${s.raw}; adjusted to ${s.tier} from how the game has rated its labels so far.` : null,
+        s.act ? `You predicted ${s.raw || s.tier || '?'}, the game rated it ${s.act}.` : null,
         copyOn ? 'click to copy' : null,
       ].filter(Boolean).join('  ·  ');
       const yes = h('button', { type: 'button', class: `vb yes${s.v === 'good' ? ' on' : ''}`, title: 'Correct: the game accepted it (click again to undo)', text: '✓' });

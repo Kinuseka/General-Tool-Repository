@@ -54,6 +54,12 @@
     </section>
 
     <section class="panel">
+      <h2>English dictionary</h2>
+      <p class="note">For prompts that ask for <em>English words</em> only (for example "Name an English word starting with “squ”"), suggestions are checked against a local word list: a real word is kept, a form or the start of a word is kept and marked ◐, anything else is dropped, and a "starting with…" pattern is enforced exactly. Real matching words are also offered to the AI as candidates. Every other kind of prompt ignores the dictionary, and the AI is told which kind it has. Nothing leaves your computer for this.</p>
+      <p id="dictStatus" class="note" role="status">Checking…</p>
+    </section>
+
+    <section class="panel">
       <h2>Your leanings</h2>
       <label class="switch" for="adaptToMe"><span>Suggest answers that fit me</span><input type="checkbox" id="adaptToMe"><span class="track"></span></label>
       <p class="note">The extension records the answers the game accepted from <em>you</em> (daily dive, and party rounds where it can tell which player you are) and flags the ones the AI never suggested. Those are sent to the AI as examples of what you know that it misses, with an instruction to follow the same leanings when the prompt allows: if your own answers lean East Asian, it tries East Asian answers where the question fits, mixed with the usual ones. It never overrides the question's constraints. Needs "Learn from game results" below to be on.</p>

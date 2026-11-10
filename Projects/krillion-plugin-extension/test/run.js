@@ -1252,6 +1252,7 @@ const FULL_FEEDBACK = {
     'Your rarity labels overstate rarity: the game rated your answers about 1.2 tiers MORE common than you labelled them (over 14 answers). Label conservatively.',
     'Rejected answers averaged 4.1 words but accepted ones 1.9: prefer short, specific names over long or vague phrases.',
   ],
+  similar: [{ q: 'Name a freshwater fish', answers: [{ text: 'Walleye', tier: 'rare' }, { text: 'Bluegill', tier: null }] }],
   profile: {
     answers: [
       { q: 'Name a toy brand', a: 'Tamiya', tier: 'rare', niche: true },
@@ -1270,7 +1271,7 @@ test('sanitizeFeedback: every field the prompt reads survives the trip to the mo
   assert.equal(viaWorker, direct);
   for (const needle of ['The game accepted: Oregon', 'The game rejected: Maine', '"Name a toy brand" accepted: Lego; rejected: Nerf',
     'Threebanded Sheephead (rare; also accepted when typed as sea donkey)', 'Plastic building blocks', 'overstate rarity',
-    'prefer short, specific names', 'Tamiya', 'I know Japanese and Korean pop culture']) {
+    'prefer short, specific names', 'Similar prompts the game has asked before', '"Name a freshwater fish": Walleye (rare), Bluegill', 'Tamiya', 'I know Japanese and Korean pop culture']) {
     assert.ok(viaWorker.includes(needle), `missing from the prompt: ${needle}`);
   }
 });
@@ -1867,6 +1868,257 @@ test('profile: older daily answers without a date are ignored, not trusted, and 
   Profile.record(P, { q: 'Name a fruit', answer: 'Salak', tier: 'deepcut', niche: true, source: 'party' }, NOW + 3);
   assert.equal(Profile.stats(P).total, 2);
   assert.deepEqual(Profile.promptHints(P, '').answers.map((a) => a.a).sort(), ['Salak', 'Tarsier']);
+});
+
+// ---- is the AI improving? ------------------------------------------------------------------------------------
+test('accuracy trend: the share of ruled-on suggestions the game accepted, per finished game', () => {
+  const L = learn.newLearned();
+  const game = (key, hit, miss) => ({ key, totals: { ai: { shown: hit + miss + 2, hit, miss, unused: 2 } } });
+  learn.recordGame(L, game('a', 3, 7), [], NOW); // 30%
+  learn.recordGame(L, game('b', 1, 1), [], NOW + 1); // 2 ruled on: too few to say anything
+  learn.recordGame(L, game('c', 6, 4), [], NOW + 2); // 60%
+  learn.recordGame(L, { key: 'd' }, [], NOW + 3); // no suggestion data at all
+  learn.recordGame(L, game('e', 9, 1), [], NOW + 4); // 90%
+  assert.deepEqual(learn.stats(L).accuracy, [{ pct: 30, tried: 10, key: 'a' }, { pct: 60, tried: 10, key: 'c' }, { pct: 90, tried: 10, key: 'e' }]);
+  const many = learn.newLearned();
+  for (let i = 0; i < 15; i++) learn.recordGame(many, game(`g${i}`, 5, 5), [], NOW + i);
+  assert.equal(learn.stats(many).accuracy.length, 10, 'the last ten');
+  assert.deepEqual(learn.stats(learn.newLearned()).accuracy, []);
+});
+
+// ---- local English dictionary (English-word prompts only) -------------------------------------------------------
+const Dict = require('../src/dictionary.js');
+const WORDS = ['squab', 'squabble', 'squad', 'squalid', 'squall', 'squander', 'square', 'squash', 'squat', 'squawk', 'squeak', 'squeal', 'squeeze',
+  'squid', 'squiggle', 'squiggly', 'squint', 'squire', 'squirm', 'squirrel', 'squirt', 'squish', 'make', 'stop', 'cat', 'cats', 'ice', 'cream', 'icing', 'sing', 'ring'];
+const dict = new Dict.Dictionary(WORDS.join('\n') + '\nDon\'t\nCafé\n');
+const SQU = 'Name an English word starting with “squ”';
+
+test('dictionary: tells apart exists / partly exists / no', () => {
+  assert.equal(dict.status('squid'), 'word');
+  assert.equal(dict.status('SQUID'), 'word', 'case does not matter');
+  assert.equal(dict.status('Café'), 'word');
+  assert.equal(dict.status('cafe'), 'word', 'accents are ignored');
+  assert.equal(dict.status('dont'), 'word', 'apostrophes are ignored');
+  assert.equal(dict.status('squabbled'), 'partial', 'a form of a listed word');
+  assert.equal(dict.status('squirting'), 'partial');
+  assert.equal(dict.status('making'), 'partial', 'e dropped before -ing');
+  assert.equal(dict.status('stopping'), 'partial', 'doubled consonant before -ing');
+  assert.equal(dict.status('squabb'), 'partial', 'the start of a listed word');
+  assert.equal(dict.status('squirrelz'), 'none');
+  assert.equal(dict.status('zzzzz'), 'none');
+  assert.equal(dict.status(''), 'none');
+  assert.equal(dict.status('ice cream'), 'word', 'every part is a word');
+  assert.equal(dict.status('ice-cream'), 'word');
+  assert.equal(dict.status('ice zork'), 'partial', 'some of it is');
+  assert.equal(dict.status('qq zork'), 'none');
+  assert.equal(dict.status('12345'), 'none');
+  assert.equal(dict.size, WORDS.length + 2);
+});
+test('dictionary: patterns in the prompt are read, including the game\'s curly quotes', () => {
+  assert.deepEqual(Dict.parsePattern(SQU), { prefix: 'squ' });
+  assert.deepEqual(Dict.parsePattern('Name an English word starting with "squ"'), { prefix: 'squ' });
+  assert.deepEqual(Dict.parsePattern('an English word that begins with the letters str'), { prefix: 'str' });
+  assert.deepEqual(Dict.parsePattern('Name an English word ending in ing'), { suffix: 'ing' });
+  assert.deepEqual(Dict.parsePattern('an English word that ends with “tion”'), { suffix: 'tion' });
+  assert.deepEqual(Dict.parsePattern('an English word containing “zz” that begins with b'), { prefix: 'b', contains: 'zz' });
+  assert.deepEqual(Dict.parsePattern('Name a toy brand'), {});
+});
+test('dictionary: only prompts that ask for ENGLISH WORDS count', () => {
+  assert.equal(ai.isEnglishWordPrompt(SQU), true);
+  assert.equal(ai.isEnglishWordPrompt('Name an English-language word with silent letters'), true);
+  assert.equal(ai.isEnglishWordPrompt('Name an English word'), true);
+  for (const q of ['Name a toy brand', 'Name a language with more than 10 million total speakers', 'Name an English-language movie', 'Name a word in French', 'Name a country with at least one active volcano', '']) {
+    assert.equal(ai.isEnglishWordPrompt(q), false, q);
+  }
+});
+test('dictionary: real words fitting a pattern, as a spread, honouring exclusions', () => {
+  const all = dict.match({ prefix: 'squ' }, { limit: 100 });
+  assert.equal(all.length, 22);
+  assert.ok(all.includes('squiggly') && !all.includes('stop'));
+  const few = dict.match({ prefix: 'squ' }, { limit: 5 });
+  assert.equal(few.length, 5);
+  assert.ok(few[0] === 'squab' && few[4] > few[0] && few.some((w) => w > 'squi'), 'spread across the whole range, not the first five');
+  assert.ok(!dict.match({ prefix: 'squ' }, { exclude: ['Squid', 'squash'] }).some((w) => w === 'squid' || w === 'squash'));
+  assert.deepEqual(dict.match({ suffix: 'ing' }, { minLength: 3 }), ['icing', 'ring', 'sing']);
+  assert.deepEqual(dict.match({ prefix: 'zzz' }), []);
+});
+test('dictionary: grounding is only for English-word prompts, and only if a dictionary is installed', () => {
+  assert.deepEqual(Dict.grounding(dict, 'Name a toy brand'), { validate: null, candidates: [] });
+  assert.deepEqual(Dict.grounding(null, SQU), { validate: null, candidates: [] }, 'no word list: the feature is off');
+  const g = Dict.grounding(dict, SQU, ['squid']);
+  assert.ok(g.candidates.length > 5 && !g.candidates.includes('squid') && g.candidates.every((w) => w.startsWith('squ')));
+  assert.equal(g.validate('squirrel'), 'word');
+  assert.equal(g.validate('squabbled'), 'partial');
+  assert.equal(g.validate('moose'), 'none', 'a real word that breaks the pattern is out');
+  assert.equal(g.validate('squirrelz'), 'none');
+  assert.deepEqual(Dict.grounding(dict, 'Name an English word').candidates, [], 'no pattern: nothing to look up');
+});
+test('prompt: the AI is told which kind of prompt it has, and given candidates only for English words', () => {
+  const eng = ai.buildMessages({ count: 6 }, SQU, { candidates: ['squab', 'squid'] })[1].content;
+  assert.ok(eng.includes('Prompt type: ENGLISH WORDS') && /found in an English dictionary/.test(eng));
+  assert.ok(eng.includes('Real words from an English dictionary that fit this prompt: squab, squid.'));
+  const gen = ai.buildMessages({ count: 6 }, 'Name a toy brand', { candidates: ['squab'] })[1].content;
+  assert.ok(gen.includes('Prompt type: general knowledge') && /no dictionary is involved/.test(gen));
+  assert.ok(!gen.includes('squab') && !gen.includes('ENGLISH WORDS'), 'candidates never leak into other prompts');
+  assert.ok(!ai.buildMessages({ count: 6 }, SQU)[1].content.includes('Real words from'), 'no candidates, no line');
+  const many = ai.buildMessages({ count: 6 }, SQU, { candidates: Array.from({ length: 200 }, (_, i) => `w${i}`) })[1].content;
+  assert.ok(many.includes('w79') && !many.includes('w80'), 'at most 80 words');
+});
+test('suggestions: the dictionary drops non-words, keeps and marks partial ones, and enforces the pattern', async () => {
+  const g = Dict.grounding(dict, SQU);
+  const reply = jsonStream([['squirrel', 'plankton'], ['squirrelz', 'rare'], ['moose', 'rare'], ['squabbled', 'deepcut'], ['squid', 'schooler'], ['squiggly', 'rare']]);
+  const r = sequence(reply);
+  const out = await ai.runSuggest({ settings: { ...SETTINGS, count: 4 }, question: SQU, fetchImpl: r.fetchImpl, validate: g.validate, candidates: ['squab', 'squid'], single: true });
+  assert.deepEqual(out.map((s) => [s.text, s.dict]), [['squirrel', 'word'], ['squabbled', 'partial'], ['squid', 'word'], ['squiggly', 'word']]);
+  assert.ok(r.calls[0].body.messages[1].content.includes('Real words from an English dictionary that fit this prompt: squab, squid.'));
+  // short after dropping: a normal run asks again, and the candidates and the check apply to the follow-up too
+  const first = jsonStream([['squid'], ['squirrelz'], ['moose']]);
+  const second = jsonStream([['squash'], ['squint']]);
+  const r2 = sequence(first, second);
+  const filled = await ai.runSuggest({ settings: { ...SETTINGS, count: 3 }, question: SQU, fetchImpl: r2.fetchImpl, validate: g.validate, candidates: ['squab'] });
+  assert.deepEqual(filled.map((s) => s.text), ['squid', 'squash', 'squint']);
+  assert.equal(r2.calls.length, 2);
+  assert.ok(r2.calls[1].body.messages[1].content.includes('Real words from an English dictionary'));
+  // no validator (any other prompt): nothing is checked or marked
+  const plain = await ai.runSuggest({ settings: { ...SETTINGS, count: 2 }, question: 'Name a toy brand', fetchImpl: sequence(jsonStream([['Lego'], ['Zorkblat']])).fetchImpl });
+  assert.deepEqual(plain.map((s) => [s.text, s.dict]), [['Lego', undefined], ['Zorkblat', undefined]]);
+});
+test('suggestions: what the dictionary said is remembered with the answer', () => {
+  const m = ai.memory.newMemory();
+  ai.memory.recordShown(m, SQU, { text: 'squabbled', tier: 'deepcut', dict: 'partial' }, NOW);
+  ai.memory.recordShown(m, SQU, { text: 'squid', tier: 'rare' }, NOW);
+  assert.deepEqual(ai.memory.shownFor(m, SQU, NOW).map((s) => s.dict), ['partial', undefined]);
+});
+
+test('dictionary: the bundled word list is intact and works on the real prompt', () => {
+  const file = path.join(__dirname, '../data/words.txt');
+  assert.ok(fs.existsSync(file), 'data/words.txt is missing');
+  const text = fs.readFileSync(file, 'utf8');
+  const d = new Dict.Dictionary(text);
+  assert.ok(d.size > 150000 && d.size < 220000, `unexpected size ${d.size}`);
+  assert.ok(!/<html/i.test(text), 'the word list must not be a web page');
+  const g = Dict.grounding(d, SQU);
+  const squ = d.match({ prefix: 'squ' }, { limit: 1000 });
+  assert.ok(squ.length > 200 && squ.length < 320, `squ words: ${squ.length}`);
+  for (const w of ['squab', 'squiggly', 'squirrel', 'squeak', 'squash']) assert.equal(g.validate(w), 'word', w); // words the game accepted
+  for (const w of ['squirrelz', 'squark', 'moose']) assert.equal(g.validate(w), 'none', w);
+  assert.equal(g.validate('squabbl'), 'partial', 'the start of "squabble", not a word itself');
+  assert.ok(g.candidates.length === 60 && g.candidates.every((w) => w.startsWith('squ')));
+});
+
+// ---- the ledger and the app's own checks (learn.js) -----------------------------------------------------
+const ledgerL = () => learn.newLearned();
+test('ledger: a prompt is counted once per game, again in a new game', () => {
+  const L = ledgerL();
+  learn.recordSeen(L, 'Name a fish', 'g1', 1);
+  learn.recordSeen(L, 'name a fish', 'g1', 2); // same game re-presented
+  assert.equal(L.entries[Object.keys(L.entries)[0]].seen, 1);
+  learn.recordSeen(L, 'Name a fish', 'g2', 3);
+  assert.equal(learn.stats(L).repeated, 1);
+  assert.equal(learn.ledger(L)[0].seen, 2);
+});
+
+test('ledger: identified / answered / ruled are tracked per answer', () => {
+  const L = ledgerL();
+  learn.recordSuggested(L, 'Name a fish', 'Trout', 'plankton', 1);
+  learn.recordSuggested(L, 'Name a fish', 'Platapus', 'rare', 1);
+  learn.recordResult(L, 'Name a fish', 'Trout', { kind: 'accepted', tier: 'schooler' }, 2);
+  learn.markSuggestion(L, 'Name a fish', 'Trout', 'accepted');
+  learn.markSuggestion(L, 'Name a fish', 'Platapus', 'miss');
+  learn.recordMine(L, 'Name a fish', 'Trout', 'accepted');
+  learn.recordMine(L, 'Name a fish', 'Salmonn', 'miss');
+  learn.recordSeen(L, 'Name a fish', 'a', 1);
+  learn.recordSeen(L, 'Name a fish', 'b', 2);
+  const row = learn.ledger(L)[0];
+  assert.deepEqual([row.sug, row.sugOk, row.sugBad, row.mine, row.mineBad, row.known], [2, 1, 1, 1, 1, 1]);
+  const s = learn.stats(L);
+  assert.deepEqual([s.suggested, s.suggestedOk, s.suggestedBad], [2, 1, 1]);
+});
+
+test('ledger: the same prompt worded differently shares its record; a different number does not', () => {
+  const L = ledgerL();
+  learn.recordResult(L, 'Name an animal with flippers', 'Seal', { kind: 'accepted', tier: 'plankton' }, 1);
+  learn.recordResult(L, 'Name an animal with flippers', 'Platapus', { kind: 'miss' }, 1);
+  assert.deepEqual(learn.knownFor(L, 'Name an animal that has flippers').accepted.map((a) => a.text), ['Seal']);
+  assert.deepEqual(learn.rejectedFor(L, 'Name an animal that has flippers'), ['Platapus']);
+  learn.recordResult(L, 'Name a city with over 100,000 people', 'Reno', { kind: 'accepted', tier: 'rare' }, 1);
+  assert.equal(learn.knownFor(L, 'Name a city with over 200,000 people').accepted.length, 0);
+});
+
+test('ledger: similar prompts are references only, never the same prompt, and need real overlap', () => {
+  const L = ledgerL();
+  learn.recordResult(L, 'Name a big freshwater fish', 'Walleye', { kind: 'accepted', tier: 'rare' }, 1);
+  learn.recordResult(L, 'Name a toy brand', 'Lego', { kind: 'accepted', tier: 'plankton' }, 1);
+  const sim = learn.similar(L, 'Name a freshwater fish');
+  assert.deepEqual(sim.map((s) => s.q), ['Name a big freshwater fish']);
+  assert.deepEqual(learn.similar(L, 'Name a big freshwater fish'), []); // never itself
+  assert.deepEqual(learn.similar(L, 'Name a toy store'), []); // too little overlap
+});
+
+test('enrich: the game\'s own rating beats the AI\'s guess, and the AI\'s words are kept as raw', () => {
+  const L = ledgerL();
+  learn.recordResult(L, 'Name a fish', 'Trout', { kind: 'accepted', tier: 'schooler' }, 1);
+  const out = learn.enrich(L, 'Name a fish', { text: 'trout', tier: 'rare', why: 'x' });
+  assert.deepEqual([out.tier, out.raw, out.known], ['schooler', 'rare', 1]);
+  const same = learn.enrich(L, 'Name a fish', { text: 'Trout', tier: 'schooler' });
+  assert.equal(same.raw, undefined);
+  assert.equal(same.known, 1);
+});
+
+test('calibrateTier: shifts only on a measured bias, never makes or moves a krillion', () => {
+  const L = ledgerL();
+  assert.equal(learn.calibrateTier(L, 'rare'), 'rare'); // too little data
+  for (let i = 0; i < 10; i++) learn.recordCalibration(L, 'q' + i, 'a' + i, 'rare', 'schooler', i); // AI overstates by 1
+  assert.equal(learn.calibrateTier(L, 'rare'), 'schooler');
+  assert.equal(learn.calibrateTier(L, 'plankton'), 'plankton');
+  assert.equal(learn.calibrateTier(L, 'krillion'), 'krillion');
+  const M = ledgerL();
+  for (let i = 0; i < 10; i++) learn.recordCalibration(M, 'q' + i, 'a' + i, 'deepcut', 'krillion', i); // understates
+  assert.equal(learn.calibrateTier(M, 'deepcut'), 'deepcut'); // would be krillion: capped at deepcut
+  const out = learn.enrich(L, 'Name a fish', { text: 'Zander', tier: 'rare' });
+  assert.deepEqual([out.tier, out.raw], ['schooler', 'rare']);
+});
+
+test('suggestions: answers the game already rejected on this prompt are refused, but only exactly', async () => {
+  const r = sequence(jsonStream([['Platapus', 'rare'], ['Platypus', 'rare'], ['Otter', 'plankton']]));
+  const out = await ai.runSuggest({
+    settings: { ...SETTINGS, count: 2 }, question: 'Name a mammal', fetchImpl: r.fetchImpl, single: true,
+    feedback: { known: { accepted: [], rejected: ['Platapus'] } },
+  });
+  assert.deepEqual(out.map((s) => s.text), ['Platypus', 'Otter']);
+});
+
+test('find rarest: the instruction is sent on the first request and every top-up, and only then', async () => {
+  assert.ok(!ai.buildMessages({ count: 5 }, 'Name a fish')[1].content.includes('RAREST'));
+  assert.ok(ai.buildMessages({ count: 5 }, 'Name a fish', { rarest: true })[1].content.includes('RAREST'));
+  const r = sequence(jsonStream([['A', 'schooler'], ['B', 'rare'], ['C', 'deepcut'], ['D', 'plankton']]));
+  const got = [];
+  const out = await ai.runSuggest({ settings: { ...SETTINGS, count: 8 }, question: 'Name a fish', fetchImpl: r.fetchImpl, rarest: true, onSuggestion: (s) => got.push(s.text) });
+  assert.equal(r.calls.length, 1, 'one request, no top-ups');
+  assert.ok(r.calls[0].body.messages[1].content.includes('RAREST'));
+  assert.deepEqual(out.map((s) => s.text), ['C']); // exactly one, the rarest-labelled
+  assert.deepEqual(got, ['C']);
+});
+test('find rarest: still gives one answer if every candidate is labelled common, and none the game rejected', async () => {
+  const r = sequence(jsonStream([['Platapus', 'rare'], ['Walleye', 'schooler'], ['Bluegill', 'plankton']]));
+  const out = await ai.runSuggest({
+    settings: SETTINGS, question: 'Name a fish', fetchImpl: r.fetchImpl, rarest: true,
+    feedback: { known: { accepted: [], rejected: ['Platapus'] } },
+  });
+  assert.deepEqual(out.map((s) => s.text), ['Walleye']);
+});
+
+test('memory: "already suggested" is per game; a new game may get the same words again', () => {
+  const M = ai.memory.newMemory();
+  const Q = 'Name a fish';
+  assert.equal(ai.memory.startGame(M, Q, 'g1', 1000), false);
+  ai.memory.recordShown(M, Q, { text: 'Trout', tier: 'plankton' }, 1001);
+  assert.equal(ai.memory.startGame(M, Q, 'g1', 1002), false); // same game (e.g. page reload): kept
+  assert.deepEqual(ai.memory.excludeFor(M, Q, 1003), ['Trout']);
+  assert.equal(ai.memory.startGame(M, Q, 'g2', 1004), true); // new game: starts empty
+  assert.deepEqual(ai.memory.excludeFor(M, Q, 1005), []);
+  ai.memory.recordShown(M, Q, { text: 'Trout', tier: 'plankton' }, 1006); // and may be suggested again
+  assert.deepEqual(ai.memory.excludeFor(M, Q, 1007), ['Trout']);
 });
 
 // ---- manifest sanity ----------------------------------------------------------------

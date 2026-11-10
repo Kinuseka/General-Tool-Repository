@@ -53,6 +53,7 @@
   const overlay = globalThis.KrillionOverlay.createOverlay({
     onRefresh: () => current && present(current, { mode: 'fresh' }), // new batch, replaces the list
     onMore: () => current && ensure(current.text, 'more'), // adds to the list, never repeating
+    onRarest: () => current && ensure(current.text, 'rarest'), // adds answers aimed at the rare end
     onVerdict: (item, verdict) => setVerdict(item, verdict),
     // The game measures how an answer was entered (keystrokes, pastes); clicking a row copies it to paste.
     canCopy: () => settings.copyOnClick !== false,
@@ -211,9 +212,18 @@
     if (settings.learnFromGame && o.mine && o.kind === 'accepted') {
       Profile.record(profile, { q: o.q, answer: o.answer, tier: o.tier, niche: !hit, source: o.source, date: o.date }, now);
     }
+    // The player's own answer and how the game ruled on it (the ack / daily reply is the exact record; the
+    // party event for the same answer is not counted a second time).
+    if (settings.learnFromGame && o.mine && (o.fromAck || o.source !== 'party') && (o.kind === 'accepted' || o.kind === 'miss')) {
+      Learn.recordMine(learned, o.q, o.answer, o.kind);
+    }
     if (!hit) return;
-    if (settings.learnFromGame && hit.first && o.kind === 'accepted' && hit.item.tier && o.tier) {
-      Learn.recordCalibration(learned, o.q, hit.item.text, hit.item.tier, o.tier, now); // predicted vs actual
+    if (settings.learnFromGame && hit.first && (o.kind === 'accepted' || o.kind === 'miss')) {
+      Learn.markSuggestion(learned, o.q, hit.item.text, o.kind); // the AI offered it; the game ruled
+    }
+    if (settings.learnFromGame && hit.first && o.kind === 'accepted' && (hit.item.raw || hit.item.tier) && o.tier) {
+      // Measured against what the AI itself predicted, not against the app's corrected label.
+      Learn.recordCalibration(learned, o.q, hit.item.text, hit.item.raw || hit.item.tier, o.tier, now);
     }
     const r = reqs.get(o.q);
     const row = r && r.items.find((x) => isDuplicate(x.text, hit.item.text));
@@ -445,7 +455,8 @@
   //   replace=false  "+ more": new answers are appended
   //   replace=true   first load / new batch: the visible list starts empty (memory still excludes old ones)
   //   single=true    exactly one model request, no follow-ups for missing answers (the daily dive's one request)
-  function startRequest(r, { replace, single = false }) {
+  //   rarest=true    the "find rarest" button: the model is told to aim for the rarest valid answers
+  function startRequest(r, { replace, single = false, rarest = false }) {
     r.blocked = false;
     const gen = ++r.gen; // a newer request makes this one's late messages inert
     if (r.port) {
@@ -484,8 +495,16 @@
     port.onMessage.addListener((m) => {
       if (!live()) return;
       if (m.type === 'suggestion') {
-        const item = { ...m.suggestion };
+        let item = { ...m.suggestion };
         if (!r.items.some((x) => normKey(x.text) === normKey(item.text))) {
+          if (settings.learnFromGame) {
+            // The app's own checks, before it is shown: the game's own rating of this answer (if it has one)
+            // or the measured bias in the AI's labels corrects the tier; `raw` keeps what the AI said.
+            const aiTier = item.tier;
+            item = Learn.enrich(learned, r.text, item);
+            Learn.recordSuggested(learned, r.text, item.text, aiTier, Date.now());
+            persistLearned();
+          }
           r.items.push(item);
           Mem.recordShown(memory, r.text, item, Date.now());
           persistMemory();
@@ -528,6 +547,7 @@
         },
         krillionTaken: Mem.hasKrillion(memory, r.text, now), // the game has only one krillion answer per prompt
         single,
+        rarest,
       });
     } catch (_) {
       /* onDisconnect reports it */
@@ -581,7 +601,7 @@
       return startRequest(r, { replace: true, single: limited });
     }
     if (r.status === 'loading') return r; // already working on it
-    return startRequest(r, { replace: mode === 'fresh' });
+    return startRequest(r, { replace: mode === 'fresh', rarest: mode === 'rarest' });
   }
 
   // ✓ / ✗ on a suggestion (verdict null clears it). Remembered and sent with every later request.
@@ -657,6 +677,21 @@
 
   function present(q, { mode = 'initial' } = {}) {
     current = q;
+    const gk =
+      q.text && q.source === 'daily' ? `daily:${daily ? daily.date : ''}`
+      : q.text && q.source === 'party' ? (tracker && q.code && tracker.gameKey(q.code)) || `party:${q.label}`
+      : null;
+    if (gk) {
+      // A different game (or day) starts with a clean "already suggested" list: its answers may come back.
+      const old = reqs.get(q.text);
+      if (old && old.game && old.game !== gk) cancelReq(old, true);
+      if (Mem.startGame(memory, q.text, gk, Date.now())) persistMemory();
+      if (settings.learnFromGame) {
+        // Remember this prompt was seen in this game / day (once per game, so re-presenting it is not a repeat).
+        Learn.recordSeen(learned, q.text, gk, Date.now());
+        persistLearned();
+      }
+    }
     if (unsub) unsub();
     unsub = null;
     overlay.setQuestion(q);
@@ -666,7 +701,9 @@
     } else if (!settings.enabled) {
       overlay.setStatus('info', 'AI suggestions are off.');
     } else {
-      bind(ensure(q.text, mode, { daily: q.source === 'daily' }));
+      const r = ensure(q.text, mode, { daily: q.source === 'daily' });
+      if (gk) r.game = gk;
+      bind(r);
     }
     refreshVisibility();
   }
@@ -692,6 +729,7 @@
       text: c.text,
       label: `Party ${code}${c.index !== null ? ` · #${c.index + 1}` : ''}`,
       source: 'party',
+      code,
     });
     identify(code);
     queue(async () => {

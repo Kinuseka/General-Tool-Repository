@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Krillion Question Reader",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Reads Krillion's daily questions and Puffer Party categories from the page you are playing, and shows AI answer suggestions in a floating window.",
   "minimum_chrome_version": "111",
   "permissions": ["storage", "unlimitedStorage"],

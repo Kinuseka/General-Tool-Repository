@@ -206,7 +206,7 @@ footer { padding: 8px 14px 12px; font-size: 15px; border-top: 2px solid var(--li
 <body>
 <script>
 (() => {
-  const store = {"settings":{"baseUrl":"https://api.openai.com/v1","apiKey":"","model":"gpt-4o-mini","count":8,"temperature":0.8,"systemPrompt":"You help a player of Krillion, a category game. Each round gives a prompt like \"Name a toy brand\". A valid answer scores points; the fewer players give the same answer, the more it scores. An answer that does not belong to the category scores nothing.\n\nGive exactly {count} different answers to the prompt. Always give all {count}: if you are unsure about a rare answer, replace it with a safer one that is certainly correct. Never give fewer.\n\n- Every answer must truly satisfy EVERY part of the prompt, including constraints such as \"entirely west of\", \"more than 10 million\" or anything in parentheses. Check each one before you include it. Never invent names.\n- Real names only, spelled the way people type them, no punctuation at the end. Give each thing once: no spelling, plural or \"the\" variants of the same answer.\n- Rare does NOT mean long or vague. A rare answer is a short, specific, real name that few people think of (a lesser-known brand, title, species or place), usually one to three words. Never use a description, a generic category or a long phrase to sound rare (\"plastic building blocks\", \"toy cars\"): the game rejects those.\n- Start with the most obvious answers and move toward rarer ones that are still correct.\n- Spread the tiers honestly: at most a third of the answers may be \"plankton\". Judge rarity by how many players would think of it, not by how long or unusual the wording is.\n\nRespond with a single JSON object and nothing else: no markdown, no commentary. It has an \"answers\" array of exactly {count} items. Each item has three strings, in this order: \"why\" (at most 8 words showing how the answer meets the prompt's constraint; write it first and only keep answers that really fit), \"answer\", and \"tier\", which says how rare the answer is: \"plankton\" (everyone says it), \"schooler\" (common), \"rare\", \"deepcut\" (obscure), or \"krillion\". Krillion is exceedingly rare: the game has exactly ONE krillion answer per prompt, a real answer that almost no player would ever think of. Use \"krillion\" for at most ONE item in your reply, and only if you are truly sure it is valid; when in doubt use \"deepcut\" for every item.\n\nExample reply for the prompt \"Name a fruit\":\n{example}","enabled":true,"overlayEnabled":true,"dailySingleRequest":true,"prefetchDaily":false,"learnFromGame":true,"reflectAtGameEnd":true,"collectParty":false,"recordRaw":false,"copyOnClick":true,"adaptToMe":true,"interests":"I know Japanese and Korean pop culture and food.","opacity":0.85,"collapsed":false},"learned":{"v":1,"entries":{"nameamilitaryrank":{"q":"Name a military rank","at":1794249901438,"a":{"colonel":{"t":"Colonel","n":1,"miss":0,"taken":0,"tier":"schooler"},"captain":{"t":"Captain","n":1,"miss":0,"taken":0,"tier":"plankton"},"major":{"t":"Major","n":1,"miss":0,"taken":0,"tier":"schooler"},"lieutenant":{"t":"Lieutenant","n":1,"miss":0,"taken":0,"tier":"plankton"}}},"nameananimalwithflippers":{"q":"Name an animal with flippers","at":1794249901438,"a":{"answer0":{"t":"Answer 0","n":0,"miss":1,"taken":0},"answer1":{"t":"Answer 1","n":1,"miss":0,"taken":0,"tier":"rare"},"answer2":{"t":"Answer 2","n":1,"miss":0,"taken":0,"tier":"rare"},"answer3":{"t":"Answer 3","n":1,"miss":0,"taken":0,"tier":"rare"},"answer4":{"t":"Answer 4","n":0,"miss":1,"taken":0},"answer5":{"t":"Answer 5","n":1,"miss":0,"taken":0,"tier":"rare"},"answer6":{"t":"Answer 6","n":1,"miss":0,"taken":0,"tier":"rare"},"answer7":{"t":"Answer 7","n":1,"miss":0,"taken":0,"tier":"rare"},"answer8":{"t":"Answer 8","n":0,"miss":1,"taken":0},"answer9":{"t":"Answer 9","n":1,"miss":0,"taken":0,"tier":"rare"},"answer10":{"t":"Answer 10","n":1,"miss":0,"taken":0,"tier":"rare"},"answer11":{"t":"Answer 11","n":1,"miss":0,"taken":0,"tier":"rare"},"answer12":{"t":"Answer 12","n":0,"miss":1,"taken":0},"answer13":{"t":"Answer 13","n":1,"miss":0,"taken":0,"tier":"rare"},"answer14":{"t":"Answer 14","n":1,"miss":0,"taken":0,"tier":"rare"},"answer15":{"t":"Answer 15","n":1,"miss":0,"taken":0,"tier":"rare"},"answer16":{"t":"Answer 16","n":0,"miss":1,"taken":0},"answer17":{"t":"Answer 17","n":1,"miss":0,"taken":0,"tier":"rare"},"answer18":{"t":"Answer 18","n":1,"miss":0,"taken":0,"tier":"rare"},"answer19":{"t":"Answer 19","n":1,"miss":0,"taken":0,"tier":"rare"},"answer20":{"t":"Answer 20","n":0,"miss":1,"taken":0},"answer21":{"t":"Answer 21","n":1,"miss":0,"taken":0,"tier":"rare"},"answer22":{"t":"Answer 22","n":1,"miss":0,"taken":0,"tier":"rare"},"answer23":{"t":"Answer 23","n":1,"miss":0,"taken":0,"tier":"rare"},"answer24":{"t":"Answer 24","n":0,"miss":1,"taken":0},"answer25":{"t":"Answer 25","n":1,"miss":0,"taken":0,"tier":"rare"},"answer26":{"t":"Answer 26","n":1,"miss":0,"taken":0,"tier":"rare"},"answer27":{"t":"Answer 27","n":1,"miss":0,"taken":0,"tier":"rare"},"answer28":{"t":"Answer 28","n":0,"miss":1,"taken":0},"answer29":{"t":"Answer 29","n":1,"miss":0,"taken":0,"tier":"rare"},"answer30":{"t":"Answer 30","n":1,"miss":0,"taken":0,"tier":"rare"},"answer31":{"t":"Answer 31","n":1,"miss":0,"taken":0,"tier":"rare"},"answer32":{"t":"Answer 32","n":0,"miss":1,"taken":0},"answer33":{"t":"Answer 33","n":1,"miss":0,"taken":0,"tier":"rare"},"answer34":{"t":"Answer 34","n":1,"miss":0,"taken":0,"tier":"rare"},"answer35":{"t":"Answer 35","n":1,"miss":0,"taken":0,"tier":"rare"},"answer36":{"t":"Answer 36","n":0,"miss":1,"taken":0},"answer37":{"t":"Answer 37","n":1,"miss":0,"taken":0,"tier":"rare"},"answer38":{"t":"Answer 38","n":1,"miss":0,"taken":0,"tier":"rare"},"answer39":{"t":"Answer 39","n":1,"miss":0,"taken":0,"tier":"rare"},"dugong":{"t":"Dugong","n":1,"miss":0,"taken":0,"tier":"rare"}}}},"cal":{"n":12,"sum":0,"recent":[{"q":"Name a toy brand","a":"Brand 5","p":"rare","r":"rare","at":1794249901438},{"q":"Name a toy brand","a":"Brand 4","p":"rare","r":"rare","at":1794249901438},{"q":"Name a toy brand","a":"Brand 3","p":"rare","r":"rare","at":1794249901438},{"q":"Name a toy brand","a":"Brand 2","p":"rare","r":"rare","at":1794249901438},{"q":"Name a toy brand","a":"Brand 1","p":"rare","r":"rare","at":1794249901438},{"q":"Name a toy brand","a":"Brand 0","p":"rare","r":"rare","at":1794249901438},{"q":"Name a country with an active volcano","a":"Peru","p":"deepcut","r":"rare","at":1794249901438},{"q":"Name an animal with flippers","a":"Harbor seal","p":"schooler","r":"rare","at":1794249901438},{"q":"Name a military rank","a":"Lieutenant","p":"plankton","r":"plankton","at":1794249901438},{"q":"Name a military rank","a":"Major","p":"schooler","r":"schooler","at":1794249901438},{"q":"Name a military rank","a":"Captain","p":"plankton","r":"plankton","at":1794249901438},{"q":"Name a military rank","a":"Colonel","p":"schooler","r":"schooler","at":1794249901438}]},"words":{"acc":{"n":35,"sum":65},"miss":{"n":10,"sum":20}},"games":[{"v":1,"kind":"party","key":"g1","room":"FSCC","date":null,"score":null,"at":1794249901438,"result":{"won":false,"place":3,"reason":null},"totals":{"accepted":2,"rejected":0,"taken":0,"tiers":{"rare":1,"schooler":1},"mine":{"accepted":1,"rejected":0,"taken":0,"corrected":0},"ai":{"shown":2,"hit":1,"miss":1,"unused":0},"blindSpots":1},"categories":[{"q":"Name an animal with flippers","accepted":2,"rejected":0,"taken":0,"tiers":{"rare":1,"schooler":1},"top":[{"a":"Dugong","tier":"rare"},{"a":"Walrus","tier":"schooler"}],"mine":{"accepted":[{"a":"Dugong","tier":"rare"}],"rejected":[],"taken":[]},"ai":{"shown":2,"hit":1,"miss":1,"unused":0,"wrong":["Beaver"]},"gaps":[{"a":"Dugong","tier":"rare"}]}],"brief":"Party FSCC: 1 prompt · 2 accepted, 0 rejected · you 1 accepted, 0 rejected · AI 1/2 suggestions accepted, 1 rejected, 1 blind spot · you placed 3rd"}],"insights":[{"t":"In \"Name an animal with flippers\" the game accepted answers you never suggested, such as \"Dugong\" (rare): think of answers like these.","at":1794249901438},{"t":"In \"Name an animal with flippers\" the game rejected your suggestions \"Beaver\": check that every answer truly belongs to the category.","at":1794249901438}],"reflections":[{"t":"Check that each answer truly belongs to the category before suggesting it.","at":1794249901438,"key":"g1"},{"t":"Think of the less obvious members of a category, not only the famous one.","at":1794249901438,"key":"g1"}]},"profile":{"v":1,"mine":[{"q":"Name an animal that eats bugs","a":"Tarsier","tier":"deepcut","niche":true,"src":"daily","d":"2026-11-09","t":1794249901438},{"q":"Name a toy brand","a":"Tamiya","tier":"rare","niche":true,"src":"daily","d":"2026-11-09","t":1794249901437},{"q":"Name a means of transport","a":"Shinkansen","tier":"rare","niche":true,"src":"daily","d":"2026-11-09","t":1794249901436},{"q":"Name a country that has won the men's soccer World Cup","a":"Spain","tier":"schooler","niche":true,"src":"daily","d":"2026-11-09","t":1794249901435},{"q":"Name a toy brand","a":"Lego","tier":"plankton","niche":false,"src":"party","t":1794249901438},{"q":"Old prompt 0","a":"Old answer 0","tier":null,"niche":true,"src":"daily","t":1794248901438},{"q":"Old prompt 1","a":"Old answer 1","tier":null,"niche":false,"src":"daily","t":1794248901437},{"q":"Old prompt 2","a":"Old answer 2","tier":null,"niche":true,"src":"daily","t":1794248901436},{"q":"Old prompt 3","a":"Old answer 3","tier":null,"niche":false,"src":"daily","t":1794248901435},{"q":"Old prompt 4","a":"Old answer 4","tier":null,"niche":true,"src":"daily","t":1794248901434},{"q":"Old prompt 5","a":"Old answer 5","tier":null,"niche":false,"src":"daily","t":1794248901433},{"q":"Old prompt 6","a":"Old answer 6","tier":null,"niche":true,"src":"daily","t":1794248901432},{"q":"Old prompt 7","a":"Old answer 7","tier":null,"niche":false,"src":"daily","t":1794248901431},{"q":"Old prompt 8","a":"Old answer 8","tier":null,"niche":true,"src":"daily","t":1794248901430},{"q":"Old prompt 9","a":"Old answer 9","tier":null,"niche":false,"src":"daily","t":1794248901429},{"q":"Old prompt 10","a":"Old answer 10","tier":null,"niche":true,"src":"daily","t":1794248901428},{"q":"Old prompt 11","a":"Old answer 11","tier":null,"niche":false,"src":"daily","t":1794248901427}]},"daily":{"2026-11-09":{"date":"2026-11-09","dayNumber":117,"prompts":[{"id":"p1","text":"Name a podcast (1K+ ratings on Spotify)"},{"id":"p2","text":"Name a toy brand"}]}},"party":{"entries":[{"room":"FSCC","index":1,"text":"Name an ice cream flavor","threshold":20,"firstSeen":1794249841438},{"room":"FSCC","index":2,"text":"Name a military rank","threshold":12,"firstSeen":1794249871438}]},"pdIndex":[],"rawIndex":[]};
+  const store = {"settings":{"baseUrl":"https://api.openai.com/v1","apiKey":"","model":"gpt-4o-mini","count":8,"temperature":0.8,"systemPrompt":"You help a player of Krillion, a category game. Each round gives a prompt like \"Name a toy brand\". A valid answer scores points; the fewer players give the same answer, the more it scores. An answer that does not belong to the category scores nothing.\n\nGive exactly {count} different answers to the prompt. Always give all {count}: if you are unsure about a rare answer, replace it with a safer one that is certainly correct. Never give fewer.\n\n- Every answer must truly satisfy EVERY part of the prompt, including constraints such as \"entirely west of\", \"more than 10 million\" or anything in parentheses. Check each one before you include it. Never invent names.\n- Real names only, spelled the way people type them, no punctuation at the end. Give each thing once: no spelling, plural or \"the\" variants of the same answer.\n- Rare does NOT mean long or vague. A rare answer is a short, specific, real name that few people think of (a lesser-known brand, title, species or place), usually one to three words. Never use a description, a generic category or a long phrase to sound rare (\"plastic building blocks\", \"toy cars\"): the game rejects those.\n- Start with the most obvious answers and move toward rarer ones that are still correct.\n- Spread the tiers honestly: at most a third of the answers may be \"plankton\". Judge rarity by how many players would think of it, not by how long or unusual the wording is.\n\nRespond with a single JSON object and nothing else: no markdown, no commentary. It has an \"answers\" array of exactly {count} items. Each item has three strings, in this order: \"why\" (at most 8 words showing how the answer meets the prompt's constraint; write it first and only keep answers that really fit), \"answer\", and \"tier\", which says how rare the answer is: \"plankton\" (everyone says it), \"schooler\" (common), \"rare\", \"deepcut\" (obscure), or \"krillion\". Krillion is exceedingly rare: the game has exactly ONE krillion answer per prompt, a real answer that almost no player would ever think of. Use \"krillion\" for at most ONE item in your reply, and only if you are truly sure it is valid; when in doubt use \"deepcut\" for every item.\n\nExample reply for the prompt \"Name a fruit\":\n{example}","enabled":true,"overlayEnabled":true,"dailySingleRequest":true,"prefetchDaily":false,"learnFromGame":true,"reflectAtGameEnd":true,"collectParty":false,"recordRaw":false,"copyOnClick":true,"adaptToMe":true,"interests":"I know Japanese and Korean pop culture and food.","opacity":0.85,"collapsed":false},"learned":{"v":1,"entries":{"nameamilitaryrank":{"q":"Name a military rank","at":1794284976192,"a":{"colonel":{"t":"Colonel","n":1,"miss":0,"taken":0,"tier":"schooler"},"captain":{"t":"Captain","n":1,"miss":0,"taken":0,"tier":"plankton"},"major":{"t":"Major","n":1,"miss":0,"taken":0,"tier":"schooler"},"lieutenant":{"t":"Lieutenant","n":1,"miss":0,"taken":0,"tier":"plankton"}}},"nameananimalwithflippers":{"q":"Name an animal with flippers","at":1794284976192,"a":{"answer0":{"t":"Answer 0","n":0,"miss":1,"taken":0},"answer1":{"t":"Answer 1","n":1,"miss":0,"taken":0,"tier":"rare"},"answer2":{"t":"Answer 2","n":1,"miss":0,"taken":0,"tier":"rare"},"answer3":{"t":"Answer 3","n":1,"miss":0,"taken":0,"tier":"rare"},"answer4":{"t":"Answer 4","n":0,"miss":1,"taken":0},"answer5":{"t":"Answer 5","n":1,"miss":0,"taken":0,"tier":"rare"},"answer6":{"t":"Answer 6","n":1,"miss":0,"taken":0,"tier":"rare"},"answer7":{"t":"Answer 7","n":1,"miss":0,"taken":0,"tier":"rare"},"answer8":{"t":"Answer 8","n":0,"miss":1,"taken":0},"answer9":{"t":"Answer 9","n":1,"miss":0,"taken":0,"tier":"rare"},"answer10":{"t":"Answer 10","n":1,"miss":0,"taken":0,"tier":"rare"},"answer11":{"t":"Answer 11","n":1,"miss":0,"taken":0,"tier":"rare"},"answer12":{"t":"Answer 12","n":0,"miss":1,"taken":0},"answer13":{"t":"Answer 13","n":1,"miss":0,"taken":0,"tier":"rare"},"answer14":{"t":"Answer 14","n":1,"miss":0,"taken":0,"tier":"rare"},"answer15":{"t":"Answer 15","n":1,"miss":0,"taken":0,"tier":"rare"},"answer16":{"t":"Answer 16","n":0,"miss":1,"taken":0},"answer17":{"t":"Answer 17","n":1,"miss":0,"taken":0,"tier":"rare"},"answer18":{"t":"Answer 18","n":1,"miss":0,"taken":0,"tier":"rare"},"answer19":{"t":"Answer 19","n":1,"miss":0,"taken":0,"tier":"rare"},"answer20":{"t":"Answer 20","n":0,"miss":1,"taken":0},"answer21":{"t":"Answer 21","n":1,"miss":0,"taken":0,"tier":"rare"},"answer22":{"t":"Answer 22","n":1,"miss":0,"taken":0,"tier":"rare"},"answer23":{"t":"Answer 23","n":1,"miss":0,"taken":0,"tier":"rare"},"answer24":{"t":"Answer 24","n":0,"miss":1,"taken":0},"answer25":{"t":"Answer 25","n":1,"miss":0,"taken":0,"tier":"rare"},"answer26":{"t":"Answer 26","n":1,"miss":0,"taken":0,"tier":"rare"},"answer27":{"t":"Answer 27","n":1,"miss":0,"taken":0,"tier":"rare"},"answer28":{"t":"Answer 28","n":0,"miss":1,"taken":0},"answer29":{"t":"Answer 29","n":1,"miss":0,"taken":0,"tier":"rare"},"answer30":{"t":"Answer 30","n":1,"miss":0,"taken":0,"tier":"rare"},"answer31":{"t":"Answer 31","n":1,"miss":0,"taken":0,"tier":"rare"},"answer32":{"t":"Answer 32","n":0,"miss":1,"taken":0},"answer33":{"t":"Answer 33","n":1,"miss":0,"taken":0,"tier":"rare"},"answer34":{"t":"Answer 34","n":1,"miss":0,"taken":0,"tier":"rare"},"answer35":{"t":"Answer 35","n":1,"miss":0,"taken":0,"tier":"rare"},"answer36":{"t":"Answer 36","n":0,"miss":1,"taken":0},"answer37":{"t":"Answer 37","n":1,"miss":0,"taken":0,"tier":"rare"},"answer38":{"t":"Answer 38","n":1,"miss":0,"taken":0,"tier":"rare"},"answer39":{"t":"Answer 39","n":1,"miss":0,"taken":0,"tier":"rare"},"dugong":{"t":"Dugong","n":1,"miss":0,"taken":0,"tier":"rare"}}}},"cal":{"n":12,"sum":0,"recent":[{"q":"Name a toy brand","a":"Brand 5","p":"rare","r":"rare","at":1794284976192},{"q":"Name a toy brand","a":"Brand 4","p":"rare","r":"rare","at":1794284976192},{"q":"Name a toy brand","a":"Brand 3","p":"rare","r":"rare","at":1794284976192},{"q":"Name a toy brand","a":"Brand 2","p":"rare","r":"rare","at":1794284976192},{"q":"Name a toy brand","a":"Brand 1","p":"rare","r":"rare","at":1794284976192},{"q":"Name a toy brand","a":"Brand 0","p":"rare","r":"rare","at":1794284976192},{"q":"Name a country with an active volcano","a":"Peru","p":"deepcut","r":"rare","at":1794284976192},{"q":"Name an animal with flippers","a":"Harbor seal","p":"schooler","r":"rare","at":1794284976192},{"q":"Name a military rank","a":"Lieutenant","p":"plankton","r":"plankton","at":1794284976192},{"q":"Name a military rank","a":"Major","p":"schooler","r":"schooler","at":1794284976192},{"q":"Name a military rank","a":"Captain","p":"plankton","r":"plankton","at":1794284976192},{"q":"Name a military rank","a":"Colonel","p":"schooler","r":"schooler","at":1794284976192}]},"words":{"acc":{"n":35,"sum":65},"miss":{"n":10,"sum":20}},"games":[{"v":1,"kind":"party","key":"g1","room":"FSCC","date":null,"score":null,"at":1794284976192,"result":{"won":false,"place":3,"reason":null},"totals":{"accepted":2,"rejected":0,"taken":0,"tiers":{"rare":1,"schooler":1},"mine":{"accepted":1,"rejected":0,"taken":0,"corrected":0},"ai":{"shown":2,"hit":1,"miss":1,"unused":0},"blindSpots":1},"categories":[{"q":"Name an animal with flippers","accepted":2,"rejected":0,"taken":0,"tiers":{"rare":1,"schooler":1},"top":[{"a":"Dugong","tier":"rare"},{"a":"Walrus","tier":"schooler"}],"mine":{"accepted":[{"a":"Dugong","tier":"rare"}],"rejected":[],"taken":[]},"ai":{"shown":2,"hit":1,"miss":1,"unused":0,"wrong":["Beaver"]},"gaps":[{"a":"Dugong","tier":"rare"}]}],"brief":"Party FSCC: 1 prompt · 2 accepted, 0 rejected · you 1 accepted, 0 rejected · AI 1/2 suggestions accepted, 1 rejected, 1 blind spot · you placed 3rd"}],"insights":[{"t":"In \"Name an animal with flippers\" the game accepted answers you never suggested, such as \"Dugong\" (rare): think of answers like these.","at":1794284976192},{"t":"In \"Name an animal with flippers\" the game rejected your suggestions \"Beaver\": check that every answer truly belongs to the category.","at":1794284976192}],"reflections":[{"t":"Check that each answer truly belongs to the category before suggesting it.","at":1794284976192,"key":"g1"},{"t":"Think of the less obvious members of a category, not only the famous one.","at":1794284976192,"key":"g1"}]},"profile":{"v":1,"mine":[{"q":"Name an animal that eats bugs","a":"Tarsier","tier":"deepcut","niche":true,"src":"daily","d":"2026-11-09","t":1794284976192},{"q":"Name a toy brand","a":"Tamiya","tier":"rare","niche":true,"src":"daily","d":"2026-11-09","t":1794284976191},{"q":"Name a means of transport","a":"Shinkansen","tier":"rare","niche":true,"src":"daily","d":"2026-11-09","t":1794284976190},{"q":"Name a country that has won the men's soccer World Cup","a":"Spain","tier":"schooler","niche":true,"src":"daily","d":"2026-11-09","t":1794284976189},{"q":"Name a toy brand","a":"Lego","tier":"plankton","niche":false,"src":"party","t":1794284976192},{"q":"Old prompt 0","a":"Old answer 0","tier":null,"niche":true,"src":"daily","t":1794283976192},{"q":"Old prompt 1","a":"Old answer 1","tier":null,"niche":false,"src":"daily","t":1794283976191},{"q":"Old prompt 2","a":"Old answer 2","tier":null,"niche":true,"src":"daily","t":1794283976190},{"q":"Old prompt 3","a":"Old answer 3","tier":null,"niche":false,"src":"daily","t":1794283976189},{"q":"Old prompt 4","a":"Old answer 4","tier":null,"niche":true,"src":"daily","t":1794283976188},{"q":"Old prompt 5","a":"Old answer 5","tier":null,"niche":false,"src":"daily","t":1794283976187},{"q":"Old prompt 6","a":"Old answer 6","tier":null,"niche":true,"src":"daily","t":1794283976186},{"q":"Old prompt 7","a":"Old answer 7","tier":null,"niche":false,"src":"daily","t":1794283976185},{"q":"Old prompt 8","a":"Old answer 8","tier":null,"niche":true,"src":"daily","t":1794283976184},{"q":"Old prompt 9","a":"Old answer 9","tier":null,"niche":false,"src":"daily","t":1794283976183},{"q":"Old prompt 10","a":"Old answer 10","tier":null,"niche":true,"src":"daily","t":1794283976182},{"q":"Old prompt 11","a":"Old answer 11","tier":null,"niche":false,"src":"daily","t":1794283976181}]},"daily":{"2026-11-09":{"date":"2026-11-09","dayNumber":117,"prompts":[{"id":"p1","text":"Name a podcast (1K+ ratings on Spotify)"},{"id":"p2","text":"Name a toy brand"}]}},"party":{"entries":[{"room":"FSCC","index":1,"text":"Name an ice cream flavor","threshold":20,"firstSeen":1794284916192},{"room":"FSCC","index":2,"text":"Name a military rank","threshold":12,"firstSeen":1794284946192}]},"pdIndex":[],"rawIndex":[]};
   const listeners = [];
   const pick = (keys) => {
     if (keys == null) return { ...store };
@@ -460,6 +460,10 @@ Example reply for the prompt "Name a fruit":
   const MAX_LIST = 12;
 
   // Comparison key for answers: case, spacing and punctuation don't matter ("Spider-Man" = "spiderman").
+  // Prompts that ask for English words (and so are worth checking against a dictionary). Strict on purpose: only an
+  // explicit "English word(s)", never "English-language movie" or "a language".
+  const isEnglishWordPrompt = (q) => /\benglish[- ](?:language )?words?\b/i.test(String(q || ''));
+
   const normKey = (s) => String(s == null ? '' : s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 
   // ---- near-duplicate detection --------------------------------------------------------------
@@ -541,6 +545,9 @@ Example reply for the prompt "Name a fruit":
     if (!e.shown.some((s) => isDuplicate(s.text, item.text) || (s.as && isDuplicate(s.as, item.text)))) {
       const rec = { text: item.text, tier: item.tier || null };
       if (item.why) rec.why = item.why;
+      if (item.dict) rec.dict = item.dict; // 'word' | 'partial': what the local dictionary said
+      if (item.raw) rec.raw = item.raw; // the tier the AI itself predicted, when the app changed it
+      if (item.known) rec.known = item.known; // the game has rated this answer before
       e.shown.push(rec);
     }
     e.at = now;
@@ -662,6 +669,13 @@ Example reply for the prompt "Name a fruit":
         rejected: strs(known.rejected, 12),
       },
       lessons: strs(f.lessons, 12, 400),
+      similar: (Array.isArray(f.similar) ? f.similar : []).slice(0, 3).map((s) => ({
+        q: String((s && s.q) || '').slice(0, 200),
+        answers: (Array.isArray(s && s.answers) ? s.answers : []).slice(0, 6).map((a) => ({
+          text: String((a && a.text) || '').slice(0, 80),
+          tier: tierOrNull(a && a.tier),
+        })),
+      })),
       profile:
         prof && (profAnswers.length || interests)
           ? { answers: profAnswers, total: Number(prof.total) || profAnswers.length, niche: Number(prof.niche) || 0, interests }
@@ -672,7 +686,8 @@ Example reply for the prompt "Name a fruit":
   // `want` overrides the answer count (More / top-up requests); `exclude` lists answers not to repeat;
   // `feedback` = {good, bad, others} from feedbackFor().
   //   krillionTaken: a "krillion" answer is already listed, so no further one is allowed (the game has one per prompt)
-  function buildMessages(settings, question, { want, exclude, feedback, krillionTaken } = {}) {
+  //   candidates: real words from a local English dictionary that fit an English-word prompt (see dictionary.js)
+  function buildMessages(settings, question, { want, exclude, feedback, krillionTaken, candidates } = {}) {
     const count = Number(want) || Number(settings.count) || DEFAULTS.count;
     const system = effectivePrompt(settings.systemPrompt)
       .split('{count}')
@@ -680,6 +695,16 @@ Example reply for the prompt "Name a fruit":
       .split('{example}')
       .join(exampleReply(count));
     let user = `Prompt: ${question}\nReturn exactly ${count} answers as a JSON object in the shape of the example.`;
+    // Say which kind of prompt this is: a dictionary only matters for English words, and applying that
+    // thinking to "name a brand" would make the answers worse.
+    if (isEnglishWordPrompt(question)) {
+      user += `\nPrompt type: ENGLISH WORDS. Every answer must be a single real English word found in an English dictionary (no names, brands, abbreviations or invented words) and must satisfy any pattern in the prompt.`;
+      if (candidates && candidates.length) {
+        user += `\nReal words from an English dictionary that fit this prompt: ${candidates.slice(0, 80).join(', ')}. Choose your answers from this list, favouring ones few players would think of.`;
+      }
+    } else {
+      user += `\nPrompt type: general knowledge. Names, titles, places, brands and so on are fine; no dictionary is involved.`;
+    }
     if (exclude && exclude.length) user += `\nDo not repeat any of these: ${exclude.join(', ')}.`;
     if (krillionTaken) user += `\nThe one "krillion" answer for this prompt is already on the list: do not use the "krillion" tier at all.`;
     const fb = feedback || {};
@@ -706,6 +731,13 @@ Example reply for the prompt "Name a fruit":
     }
     if (known.rejected && known.rejected.length) {
       user += `\nThe game rejected these on this prompt before, so never suggest them: ${known.rejected.join(', ')}.`;
+    }
+    const similar = (fb.similar || []).filter((s) => s.answers && s.answers.length);
+    if (similar.length) {
+      user +=
+        `\nSimilar prompts the game has asked before (answers it accepted). They are only references: check each against THIS prompt's exact wording, ` +
+        `and use one only if it truly satisfies this prompt:\n` +
+        similar.map((s) => `- "${s.q}": ${s.answers.map((a) => (a.tier ? `${a.text} (${a.tier})` : a.text)).join(', ')}`).join('\n');
     }
     if (fb.lessons && fb.lessons.length) {
       user += `\nLessons from how the game scored your earlier answers:\n${fb.lessons.map((l) => `- ${l}`).join('\n')}`;
@@ -924,7 +956,10 @@ Example reply for the prompt "Name a fruit":
   //   krillionTaken – a krillion answer is already listed for this prompt (only one may exist)
   //   single   – exactly ONE model request: no follow-up requests for missing answers. To make up for that, the
   //              model is asked for 2 extra answers and the reply is still cut at `count` (see the daily dive)
-  async function runSuggest({ settings, question, fetchImpl = fetch, signal, onSuggestion, want, exclude = [], feedback, krillionTaken = false, single = false }) {
+  //   validate   – (text) => 'word' | 'partial' | 'none' | null, for English-word prompts (a local dictionary):
+  //                'none' answers are dropped, 'partial' ones are kept and marked `dict:'partial'`
+  //   candidates – real words to offer the model for an English-word prompt
+  async function runSuggest({ settings, question, fetchImpl = fetch, signal, onSuggestion, want, exclude = [], feedback, krillionTaken = false, single = false, validate = null, candidates = [] }) {
     const s = { ...DEFAULTS, ...settings };
     if (!normalizeBase(s.baseUrl)) throw fail('not-configured', 'Set the API base URL in the extension settings.');
     if (!s.model) throw fail('not-configured', 'Set a model name in the extension settings.');
@@ -961,11 +996,21 @@ Example reply for the prompt "Name a fruit":
     const results = [];
     // Answers shown before never come back, nor anything near-identical to an answer already in this reply.
     const seen = new DupSet(baseExclude);
+    // Answers the game already rejected on this prompt are refused if the model offers them anyway. Matched
+    // EXACTLY (never fuzzily): a rejected typo must not block the correct spelling.
+    const rejectedKeys = new Set(((feedback && feedback.known && feedback.known.rejected) || []).map(answerKey));
     // The game has exactly one "krillion" answer per prompt. Any further one is a mislabel: demote it.
     const gemTaken = () => krillionTaken || results.some((r) => r.tier === 'krillion');
     const emit = (item) => {
       if (!answerKey(item.text) || seen.has(item.text) || results.length >= count) return;
+      if (rejectedKeys.has(answerKey(item.text))) return;
       seen.add(item.text);
+      if (validate) {
+        // English-word prompt: the dictionary decides. Not a word, or breaks the prompt's pattern: dropped.
+        const d = validate(item.text);
+        if (d === 'none') return;
+        if (d) item = { ...item, dict: d };
+      }
       if (item.tier === 'krillion' && gemTaken()) item = { ...item, tier: 'deepcut' };
       results.push(item);
       if (onSuggestion) onSuggestion(item);
@@ -1007,7 +1052,7 @@ Example reply for the prompt "Name a fruit":
       stream.flush().forEach(emit);
     };
 
-    await round({ want: single ? Math.min(15, count + 2) : count, exclude: baseExclude, feedback, krillionTaken });
+    await round({ want: single ? Math.min(15, count + 2) : count, exclude: baseExclude, feedback, krillionTaken, candidates });
 
     // Models often return fewer than asked. Ask for just the missing ones (at most twice),
     // telling the model what it already gave. A failure here keeps what we already have.
@@ -1021,6 +1066,7 @@ Example reply for the prompt "Name a fruit":
           exclude: [...baseExclude, ...results.map((r) => r.text)],
           feedback,
           krillionTaken: gemTaken(),
+          candidates,
         });
       } catch (e) {
         if (e.name === 'AbortError') throw e;
@@ -1131,6 +1177,7 @@ Respond with a single JSON object and nothing else: {"lessons":["...","..."]}`;
     exampleReply,
     sanitizeFeedback,
     normKey,
+    isEnglishWordPrompt,
     answerKey,
     isDuplicate,
     DupSet,
@@ -1215,6 +1262,49 @@ Respond with a single JSON object and nothing else: {"lessons":["...","..."]}`;
     return (L.entries[key] ||= { q: String(question), at: now, a: {} });
   }
 
+  // ---- prompts that are the same, or alike -----------------------------------------------------
+  // "Name an animal with flippers" and "Name an animal that has flippers" are the same question. Compared by their
+  // content words (no "name", "a", "that", "with"...), numbers kept so "over $100,000" and "over $200,000" differ.
+  const STOP = new Set(['name', 'a', 'an', 'the', 'of', 'in', 'that', 'with', 'has', 'have', 'had', 'is', 'are', 'was', 'were', 'to', 'for', 'from', 'and', 'or',
+    'at', 'on', 'by', 'least', 'one', 'more', 'than', 'most', 'any', 'some', 'type', 'kind', 'thing', 'something', 'someone', 'who', 'which', 'whose', 'can', 'be',
+    'it', 'its', 'this', 'these', 'those', 'their', 'there', 'as', 'into']);
+  function tokens(q) {
+    return new Set(
+      (String(q).toLowerCase().match(/[\p{L}\p{N}]+/gu) || [])
+        .filter((t) => !STOP.has(t))
+        .map((t) => (t.length > 3 && t.endsWith('s') && !t.endsWith('ss') ? t.slice(0, -1) : t))
+    );
+  }
+  function jaccard(a, b) {
+    if (!a.size || !b.size) return 0;
+    let both = 0;
+    for (const x of a) if (b.has(x)) both++;
+    return both / (a.size + b.size - both);
+  }
+  const SAME_PROMPT = 0.85; // at or above: the same question, worded differently
+  const SIMILAR_PROMPT = 0.5; // between the two: a related question, offered only as a reference
+
+  // The record for this prompt, then those for the same prompt worded differently.
+  function group(L, question) {
+    const key = normKey(question);
+    const qt = tokens(question);
+    const out = [];
+    if (L.entries[key]) out.push(L.entries[key]);
+    for (const [k, e] of Object.entries(L.entries)) if (k !== key && jaccard(qt, tokens(e.q)) >= SAME_PROMPT) out.push(e);
+    return out;
+  }
+
+  // The answer record for `answer` in one prompt's record (created if new), tolerant of old records.
+  const sameRec = (v, s) => isDuplicate(v.t, s) || (v.aka || []).some((a) => isDuplicate(a, s));
+  function ensureSlot(e, answer) {
+    let slot = Object.entries(e.a).find(([, v]) => sameRec(v, answer));
+    if (!slot) {
+      slot = [answerKey(answer), { t: String(answer).trim(), n: 0, miss: 0, taken: 0 }];
+      e.a[slot[0]] = slot[1];
+    }
+    return slot[1];
+  }
+
   // kind: 'accepted' (tier = the game's rarity) | 'miss' (not a valid answer) | 'taken' (valid, already used)
   // `answer` is the game's own term. `typed` (optional) is what the player typed when the game accepted
   // it as a different term (an alias or a fixed spelling): both count as correct and are one record,
@@ -1250,7 +1340,8 @@ Respond with a single JSON object and nothing else: {"lessons":["...","..."]}`;
     }
     const slots = Object.entries(e.a);
     if (slots.length > MAX_ANSWERS) {
-      slots.sort((a, b) => b[1].n + b[1].miss + b[1].taken - (a[1].n + a[1].miss + a[1].taken));
+      const weight = (v) => (v.n || 0) + (v.miss || 0) + (v.taken || 0) + (v.sug || 0) + (v.mine || 0);
+      slots.sort((a, b) => weight(b[1]) - weight(a[1]));
       slots.slice(MAX_ANSWERS).forEach(([k]) => delete e.a[k]);
     }
     prune(L);
@@ -1296,6 +1387,143 @@ Respond with a single JSON object and nothing else: {"lessons":["...","..."]}`;
     if (L.reflections.length > MAX_REFLECTIONS) L.reflections = L.reflections.slice(-MAX_REFLECTIONS);
   }
 
+  // ---- the ledger: for every prompt, what was seen, suggested, answered and how the game ruled -------------
+  // Kept across sessions, per prompt (and per answer within it), so a prompt that comes back is not met cold:
+  //   seen        how many different games / days this prompt appeared in
+  //   per answer  sug / sugOk / sugBad   the AI suggested it / and the game accepted it / rejected it
+  //               mine / mineBad         the player answered it and the game accepted / rejected it
+  //               n / miss / taken       the game accepted / rejected / ruled "already used" (anyone's answer)
+  //               pred                   the tier the AI predicted; tier = the game's real rating
+  function recordSeen(L, question, gameKey, now) {
+    if (!question) return;
+    const e = entryFor(L, question, now);
+    e.at = now;
+    e.keys ||= [];
+    if (gameKey) {
+      if (e.keys.includes(gameKey)) return; // the same game showing the same prompt again is not a repeat
+      e.keys.push(gameKey);
+      if (e.keys.length > 20) e.keys.shift();
+    }
+    e.seen = (e.seen || 0) + 1;
+  }
+
+  // The AI offered this answer for this prompt (`rawTier` = what the AI itself predicted).
+  function recordSuggested(L, question, answer, rawTier, now) {
+    if (!question || !String(answer || '').trim()) return;
+    const e = entryFor(L, question, now);
+    e.at = now;
+    const rec = ensureSlot(e, answer);
+    rec.sug = (rec.sug || 0) + 1;
+    if (TIERS.includes(rawTier)) rec.pred = rawTier;
+  }
+
+  // The game ruled on an answer the AI had suggested: 'accepted' | 'miss'.
+  function markSuggestion(L, question, answer, verdict) {
+    if (!question || (verdict !== 'accepted' && verdict !== 'miss')) return;
+    const rec = ensureSlot(entryFor(L, question, Date.now()), answer);
+    if (verdict === 'accepted') rec.sugOk = (rec.sugOk || 0) + 1;
+    else rec.sugBad = (rec.sugBad || 0) + 1;
+  }
+
+  // The player answered this and the game ruled on it.
+  function recordMine(L, question, answer, kind) {
+    if (!question || (kind !== 'accepted' && kind !== 'miss')) return;
+    const rec = ensureSlot(entryFor(L, question, Date.now()), answer);
+    if (kind === 'accepted') rec.mine = (rec.mine || 0) + 1;
+    else rec.mineBad = (rec.mineBad || 0) + 1;
+  }
+
+  // The game's own rating of an answer to this prompt, if it was ever accepted: {tier, n}.
+  function knownTier(L, question, text) {
+    for (const e of group(L, question)) {
+      const v = Object.values(e.a).find((x) => x.n > 0 && x.tier && sameRec(x, text));
+      if (v) return { tier: v.tier, n: v.n };
+    }
+    return null;
+  }
+
+  // Answers the game rejected on this prompt, to be refused if the AI repeats them. Matched EXACTLY by the
+  // caller (never fuzzily): a rejected typo ("platapus") must not block the correct word ("platypus").
+  // The AI's own rejected suggestions and the player's lead; other players' typos are at the back.
+  function rejectedFor(L, question, limit = 30) {
+    const rows = [];
+    for (const e of group(L, question)) {
+      for (const v of Object.values(e.a)) if (v.miss > 0 && !(v.n > 0) && !(v.taken > 0)) rows.push(v);
+    }
+    rows.sort((a, b) => (b.sugBad || 0) + (b.mineBad || 0) - ((a.sugBad || 0) + (a.mineBad || 0)) || b.miss - a.miss);
+    return rows.slice(0, limit).map((v) => v.t);
+  }
+
+  // LOCAL tier correction: if the AI's labels have measurably run too rare or too common, shift them the same way.
+  // Needs 8 compared answers and a shift of at least one whole tier. Never creates a "krillion" (there is only one
+  // per prompt, and nothing here can know which answer it is) and never touches an existing one.
+  function calibrateTier(L, tier) {
+    const { n, sum } = L.cal;
+    const shift = n >= 8 ? Math.round(sum / n) : 0;
+    const i = tierIdx(tier);
+    if (!shift || i < 0 || tier === 'krillion') return tier;
+    return TIERS[Math.max(0, Math.min(tierIdx('deepcut'), i + shift))];
+  }
+
+  // What the app knows about one suggestion, applied before it is shown: the game's own rating beats the AI's
+  // guess (and the answer is marked known); otherwise the AI's tier is corrected by the measured bias.
+  // `raw` keeps what the AI itself said, so its accuracy is always measured against its own words.
+  function enrich(L, question, item) {
+    const out = { ...item };
+    const kt = knownTier(L, question, out.text);
+    if (kt) {
+      if (out.tier && out.tier !== kt.tier) out.raw = out.tier;
+      out.tier = kt.tier;
+      out.known = kt.n;
+      return out;
+    }
+    const adj = calibrateTier(L, out.tier);
+    if (adj !== out.tier) {
+      out.raw = out.tier;
+      out.tier = adj;
+    }
+    return out;
+  }
+
+  // Related (not the same) prompts the game has asked before, with answers it accepted. Offered to the AI as
+  // reference only: they may not fit THIS prompt.
+  function similar(L, question, { limit = 3, per = 6 } = {}) {
+    const key = normKey(question);
+    const qt = tokens(question);
+    const out = [];
+    for (const [k, e] of Object.entries(L.entries)) {
+      if (k === key) continue;
+      const j = jaccard(qt, tokens(e.q));
+      if (j < SIMILAR_PROMPT || j >= SAME_PROMPT) continue; // same-prompt wordings are merged by group()
+      const answers = Object.values(e.a)
+        .filter((v) => v.n > 0)
+        .sort((a, b) => b.n - a.n)
+        .slice(0, per)
+        .map((v) => ({ text: v.t, tier: v.tier || null }));
+      if (answers.length) out.push({ q: e.q, j, answers });
+    }
+    return out.sort((a, b) => b.j - a.j).slice(0, limit).map(({ q, answers }) => ({ q, answers }));
+  }
+
+  // Prompts that have come back, most repeated first, with how everything on them went.
+  function ledger(L, { min = 2, limit = 8 } = {}) {
+    const sum = (recs, k) => recs.reduce((n, v) => n + (v[k] || 0), 0);
+    return Object.values(L.entries)
+      .filter((e) => (e.seen || 0) >= min)
+      .sort((a, b) => b.seen - a.seen || b.at - a.at)
+      .slice(0, limit)
+      .map((e) => {
+        const recs = Object.values(e.a);
+        return {
+          q: e.q,
+          seen: e.seen,
+          known: recs.filter((v) => v.n > 0).length,
+          sug: sum(recs, 'sug'), sugOk: sum(recs, 'sugOk'), sugBad: sum(recs, 'sugBad'),
+          mine: sum(recs, 'mine'), mineBad: sum(recs, 'mineBad'),
+        };
+      });
+  }
+
   // The model said `predicted`, the game said `actual`, for the same answer.
   function recordCalibration(L, question, answer, predicted, actual, now) {
     if (tierIdx(predicted) < 0 || tierIdx(actual) < 0) return;
@@ -1306,21 +1534,15 @@ Respond with a single JSON object and nothing else: {"lessons":["...","..."]}`;
   }
 
   // Results on this exact prompt from earlier games.
+  // (Merged across wordings of the same prompt.)
   function knownFor(L, question) {
-    const e = L.entries[normKey(question)];
-    if (!e) return { accepted: [], rejected: [] };
-    const all = Object.values(e.a);
+    const all = group(L, question).flatMap((e) => Object.values(e.a));
     const accepted = all
       .filter((v) => v.n > 0)
       .sort((a, b) => b.n - a.n)
       .slice(0, MAX_LIST)
       .map((v) => ({ text: v.t, tier: v.tier || null, ...(v.aka && v.aka.length ? { aka: v.aka } : {}) }));
-    const rejected = all
-      .filter((v) => v.miss > 0 && v.n === 0 && v.taken === 0)
-      .sort((a, b) => b.miss - a.miss)
-      .slice(0, MAX_LIST)
-      .map((v) => v.t);
-    return { accepted, rejected };
+    return { accepted, rejected: rejectedFor(L, question, MAX_LIST) };
   }
 
   const avg = (o) => (o.n ? o.sum / o.n : null);
@@ -1357,7 +1579,7 @@ Respond with a single JSON object and nothing else: {"lessons":["...","..."]}`;
   }
 
   function promptHints(L, question) {
-    return { known: knownFor(L, question), lessons: lessons(L) };
+    return { known: knownFor(L, question), lessons: lessons(L), similar: similar(L, question) };
   }
 
   function stats(L) {
@@ -1369,8 +1591,23 @@ Respond with a single JSON object and nothing else: {"lessons":["...","..."]}`;
       rejected: all.reduce((s, v) => s + v.miss, 0),
       aliases: all.reduce((s, v) => s + (v.aka ? v.aka.length : 0), 0), // typed forms the game accepted as another term
       games: L.games.length,
+      // Is it improving? Of the suggestions the game actually ruled on in each finished game, the share it
+      // accepted. Games where fewer than 3 were ruled on say too little and are left out.
+      accuracy: L.games
+        .map((g) => {
+          const t = g && g.totals && g.totals.ai;
+          const tried = t ? t.hit + t.miss : 0;
+          return tried >= 3 ? { pct: Math.round((100 * t.hit) / tried), tried, key: g.key } : null;
+        })
+        .filter(Boolean)
+        .slice(-10),
       lastGame: L.games.length ? L.games[L.games.length - 1] : null,
       reflections: L.reflections.slice(-3).reverse(), // newest first
+      repeated: Object.values(L.entries).filter((e) => (e.seen || 0) >= 2).length, // prompts met in 2+ games
+      suggested: all.reduce((s, v) => s + (v.sug || 0), 0),
+      suggestedOk: all.reduce((s, v) => s + (v.sugOk || 0), 0),
+      suggestedBad: all.reduce((s, v) => s + (v.sugBad || 0), 0),
+      ledger: ledger(L),
       calibrated: L.cal.n,
       bias: L.cal.n ? L.cal.sum / L.cal.n : null,
       avgWordsAccepted: avg(L.words.acc),
@@ -1379,7 +1616,8 @@ Respond with a single JSON object and nothing else: {"lessons":["...","..."]}`;
     };
   }
 
-  const api = { newLearned, cleanLearned, recordResult, recordAlias, recordGame, addReflection, recordCalibration, knownFor, lessons, promptHints, stats, wordCount };
+  const api = { newLearned, cleanLearned, recordResult, recordAlias, recordGame, addReflection, recordCalibration, knownFor, lessons, promptHints, stats, wordCount,
+    recordSeen, recordSuggested, markSuggestion, recordMine, knownTier, rejectedFor, calibrateTier, enrich, similar, ledger, tokens, jaccard };
   root.KrillionLearn = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
@@ -1903,6 +2141,14 @@ function renderData() {
     } else if (s.questions) {
       rows.push(kv('Rarity', 'no suggestion rated yet'));
     }
+    if (s.accuracy.length) {
+      const last = s.accuracy[s.accuracy.length - 1];
+      const before = s.accuracy.slice(0, -1);
+      const avgBefore = before.length ? Math.round(before.reduce((n, a) => n + a.pct, 0) / before.length) : null;
+      const delta = avgBefore === null ? 0 : last.pct - avgBefore;
+      const trend = avgBefore === null ? 'first game measured' : `${delta >= 5 ? '↑' : delta <= -5 ? '↓' : '→'} vs ${avgBefore}% before`;
+      rows.push(kv('Accuracy', `${last.pct}% last game`, { dim: ` · ${trend} · ${s.accuracy.length} game${s.accuracy.length === 1 ? '' : 's'}`, warn: last.pct < 40 }));
+    }
     if (s.avgWordsAccepted !== null && s.avgWordsRejected !== null) {
       const longer = s.avgWordsRejected - s.avgWordsAccepted >= 0.6;
       rows.push(kv('Length', `accepted ${s.avgWordsAccepted.toFixed(1)} words`, { dim: ` · rejected ${s.avgWordsRejected.toFixed(1)}${longer ? ' (longer)' : ''}`, warn: longer }));
@@ -1910,6 +2156,7 @@ function renderData() {
     if (mine.total || mine.ignored) {
       rows.push(kv('You', `${mine.total} answers`, { dim: ` · ${mine.niche} the AI missed${mine.ignored ? ` · ${mine.ignored} older ignored` : ''}` }));
     }
+    if (s.repeated) rows.push(kv('Repeats', `${s.repeated} prompt${s.repeated === 1 ? '' : 's'} seen again`, { dim: ` · AI suggestions: ${s.suggestedOk} accepted · ${s.suggestedBad} rejected` }));
     if (s.aliases) rows.push(kv('Typed forms', String(s.aliases), { dim: ' accepted as another term' }));
     if (s.games) rows.push(kv('Games', `${s.games} summarised`));
   }
@@ -1933,6 +2180,17 @@ function renderData() {
     list.className = 'rows';
     for (const m of mine.recentNiche) list.append(listRow('+', '', m.a, m.tier || '', m.q));
     folds.push(fold('missed', 'Answers the AI missed', mine.niche, [list]));
+  }
+  if (s.ledger && s.ledger.length) {
+    const list = document.createElement('ul');
+    list.className = 'rows';
+    for (const l of s.ledger) {
+      const bits = [`${l.known} known`];
+      if (l.sug) bits.push(`AI ${l.sugOk}/${l.sug} ok`);
+      if (l.mine || l.mineBad) bits.push(`you ${l.mine} ok, ${l.mineBad} rejected`);
+      list.append(listRow(`${l.seen}×`, '', l.q, bits.join(' · '), ''));
+    }
+    folds.push(fold('ledger', 'Prompts seen again', s.repeated, [list]));
   }
   const told = document.createElement('ul');
   told.className = 'rows plain';

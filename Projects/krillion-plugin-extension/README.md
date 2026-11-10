@@ -104,6 +104,28 @@ When a game finishes, the extension summarises it and learns from the summary. I
 - **Feedback in the window.** A short note, "Game over · summary saved · learning from it…", then "learned N lessons from it".
 - **Untrusted text.** Other players type whatever they like, and a summary is later read by a model. So only answers the *game accepted*, the AI's own suggestions and your own answers are ever listed; other players' rejected text is only counted. Every string in the text sent for reflection is JSON-quoted, and the model is told quoted text is data, never instructions.
 
+### Local English dictionary (English-word prompts only)
+
+For prompts that explicitly ask for **English words** (for example *Name an English word starting with “squ”*), suggestions are checked against a word list kept inside the extension, `data/words.txt`. Nothing is sent anywhere for this.
+
+- **Only these prompts.** A dictionary cannot answer "a toy brand" or "an animal with flippers", and thinking in dictionary terms would make those answers worse. Detection is strict: an explicit "English word(s)". The AI is told which kind of prompt it has (`Prompt type: ENGLISH WORDS` or `general knowledge`), and candidates are only ever sent for the first kind.
+- **Exists / partly exists / no.** A listed word is kept. A form of a listed word (`squabbled` when only `squabble` is listed) or the start of one (`squabb`) is kept and marked **◐** ("partly exists"), so you can judge it. Anything else is dropped. Case, accents and apostrophes are ignored; `ice cream` and `ice-cream` are checked part by part.
+- **Patterns are enforced exactly.** "starting with", "ending in" and "containing" (including the game's curly quotes) are read from the prompt. An answer that breaks the pattern is dropped, even if it is a real word.
+- **Real candidates.** When the prompt has a pattern, matching dictionary words (a spread across the range, minus what is already shown) are handed to the model: it chooses from real words instead of recalling them.
+- **If the list is short.** Dropped answers shorten the reply; a normal run asks again (follow-ups use the same check and candidates). The daily dive's single request does not.
+- **The word list** is `data/words.txt`: ENABLE, a game word list (172,823 words, about 1.7 MB; source, licence caveat and measured coverage in `data/README.md`). Settings → *English dictionary* says whether it is installed. Without the file, English-word prompts work as before. **It is dated:** modern words (`internet`, `podcast`, `emoji`), proper nouns and abbreviations are mostly absent, and it is not the exact set Krillion accepts, so a valid word it lacks is wrongly dropped and one it has that the game rejects is kept.
+
+### The accuracy harnesses (the app's own checks around the AI)
+
+The AI still generates the whole answer set on every request. Around it, the app keeps a **ledger** of every prompt and does its own checking, so the model gets better reference material and its output is verified:
+
+- **Record.** For each prompt: how many different games or days it appeared in (`seen`, once per game), and for each answer: whether the AI suggested it (`sug`) and whether the game then accepted or rejected that suggestion (`sugOk` / `sugBad`), whether *you* answered it and how it was ruled (`mine` / `mineBad`), how often anyone's answer was accepted, rejected or "already used", the tier the AI predicted (`pred`) and the game's real tier.
+- **Same prompt, different words.** "Name an animal with flippers" and "…that has flippers" share one record (compared on content words, numbers kept, so *over 100,000* and *over 200,000* stay separate).
+- **Verify.** The game's real rating beats the AI's guess: a suggestion the game has rated before is shown with its true tier and a **◆** (hover: what the AI guessed). Otherwise, once at least 8 of the AI's labels were compared with the game's and the average miss is a whole tier or more, tiers are shifted by that amount locally (never creating or moving a `krillion`). The AI's original label is kept as `raw`, and its accuracy is always measured against that, not against the corrected one.
+- **Refuse.** Answers the game already rejected on this prompt are dropped if the AI offers them again. Matched exactly, so a rejected typo never blocks the correct spelling.
+- **Reference.** Accepted answers (with tiers) from earlier games go to the AI, plus **related** prompts (about half their content words in common) labelled as references only: the AI is told to check each against this prompt's exact wording.
+- **Measure.** Settings popup → Learning: *Repeats* (prompts seen again, AI suggestions accepted vs rejected) and the *Prompts seen again* fold. All of it is stored locally and cleared by "Reset learned data".
+
 ### A daily-answer bug, fixed
 
 Earlier versions matched a daily answer to a question by its id (`p1`…`p7`) alone. Those ids repeat on every day (and in the archive), so an answer from another day's game was filed under today's question of the same number: your profile could show "Tarsier" beside a job-pay question. Now an answer is matched only if it was submitted for **today's date**; anything else is skipped. What was already stored is handled once, on the next daily load: whatever was recorded for today's prompts is dropped, and older undated daily answers in your profile are **ignored** (the popup shows "N older ignored"), never sent to the AI. **Reset** in the Learning tab removes them for good.

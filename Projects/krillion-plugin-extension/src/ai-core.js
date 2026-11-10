@@ -79,6 +79,7 @@ Example reply for the prompt "Name a fruit":
   };
 
   const MAX_TOPUPS = 2; // follow-up requests for missing answers
+  const RAREST_POOL = 4; // "find rarest": candidates asked for, of which exactly one is shown
 
   const fail = (code, message) => Object.assign(new Error(message), { code });
 
@@ -112,6 +113,10 @@ Example reply for the prompt "Name a fruit":
   const MAX_LIST = 12;
 
   // Comparison key for answers: case, spacing and punctuation don't matter ("Spider-Man" = "spiderman").
+  // Prompts that ask for English words (and so are worth checking against a dictionary). Strict on purpose: only an
+  // explicit "English word(s)", never "English-language movie" or "a language".
+  const isEnglishWordPrompt = (q) => /\benglish[- ](?:language )?words?\b/i.test(String(q || ''));
+
   const normKey = (s) => String(s == null ? '' : s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 
   // ---- near-duplicate detection --------------------------------------------------------------
@@ -188,11 +193,28 @@ Example reply for the prompt "Name a fruit":
     return e || null;
   }
 
+  // What was suggested belongs to ONE game (or day). When the same prompt turns up in a different game, the
+  // list starts empty: those answers may be suggested again. (What the game said about them is kept for good
+  // in the learned store; only this "do not repeat" list is per game.) Returns true if it was cleared.
+  function startGame(m, question, game, now) {
+    if (!game) return false;
+    const e = memoryEntry(m, question, now, true);
+    if (e.game === game) return false;
+    const reset = !!e.game && e.shown.length > 0;
+    e.game = game;
+    if (reset) e.shown = [];
+    e.at = now;
+    return reset;
+  }
+
   function recordShown(m, question, item, now) {
     const e = memoryEntry(m, question, now, true);
     if (!e.shown.some((s) => isDuplicate(s.text, item.text) || (s.as && isDuplicate(s.as, item.text)))) {
       const rec = { text: item.text, tier: item.tier || null };
       if (item.why) rec.why = item.why;
+      if (item.dict) rec.dict = item.dict; // 'word' | 'partial': what the local dictionary said
+      if (item.raw) rec.raw = item.raw; // the tier the AI itself predicted, when the app changed it
+      if (item.known) rec.known = item.known; // the game has rated this answer before
       e.shown.push(rec);
     }
     e.at = now;
@@ -314,6 +336,13 @@ Example reply for the prompt "Name a fruit":
         rejected: strs(known.rejected, 12),
       },
       lessons: strs(f.lessons, 12, 400),
+      similar: (Array.isArray(f.similar) ? f.similar : []).slice(0, 3).map((s) => ({
+        q: String((s && s.q) || '').slice(0, 200),
+        answers: (Array.isArray(s && s.answers) ? s.answers : []).slice(0, 6).map((a) => ({
+          text: String((a && a.text) || '').slice(0, 80),
+          tier: tierOrNull(a && a.tier),
+        })),
+      })),
       profile:
         prof && (profAnswers.length || interests)
           ? { answers: profAnswers, total: Number(prof.total) || profAnswers.length, niche: Number(prof.niche) || 0, interests }
@@ -324,7 +353,9 @@ Example reply for the prompt "Name a fruit":
   // `want` overrides the answer count (More / top-up requests); `exclude` lists answers not to repeat;
   // `feedback` = {good, bad, others} from feedbackFor().
   //   krillionTaken: a "krillion" answer is already listed, so no further one is allowed (the game has one per prompt)
-  function buildMessages(settings, question, { want, exclude, feedback, krillionTaken } = {}) {
+  //   candidates: real words from a local English dictionary that fit an English-word prompt (see dictionary.js)
+  //   rarest: the "find rarest" button: aim every answer at the rare end instead of a mix
+  function buildMessages(settings, question, { want, exclude, feedback, krillionTaken, candidates, rarest } = {}) {
     const count = Number(want) || Number(settings.count) || DEFAULTS.count;
     const system = effectivePrompt(settings.systemPrompt)
       .split('{count}')
@@ -332,6 +363,23 @@ Example reply for the prompt "Name a fruit":
       .split('{example}')
       .join(exampleReply(count));
     let user = `Prompt: ${question}\nReturn exactly ${count} answers as a JSON object in the shape of the example.`;
+    // Say which kind of prompt this is: a dictionary only matters for English words, and applying that
+    // thinking to "name a brand" would make the answers worse.
+    if (isEnglishWordPrompt(question)) {
+      user += `\nPrompt type: ENGLISH WORDS. Every answer must be a single real English word found in an English dictionary (no names, brands, abbreviations or invented words) and must satisfy any pattern in the prompt.`;
+      if (candidates && candidates.length) {
+        user += `\nReal words from an English dictionary that fit this prompt: ${candidates.slice(0, 80).join(', ')}. Choose your answers from this list, favouring ones few players would think of.`;
+      }
+    } else {
+      user += `\nPrompt type: general knowledge. Names, titles, places, brands and so on are fine; no dictionary is involved.`;
+    }
+    if (rarest) {
+      user +=
+        `\nGOAL: find the single RAREST valid answer to this prompt: a "deepcut" or "krillion" level answer, one that almost no player would think of. ` +
+        `Never offer a common or merely uncommon answer ("plankton" or "schooler" level). Dig for the obscure, specialised or unusual. ` +
+        `Put the rarest first, then the next rarest as backups. Every answer must still be real and correct and satisfy the prompt exactly: ` +
+        `a rare answer the game rejects scores nothing. Label the tiers honestly.`;
+    }
     if (exclude && exclude.length) user += `\nDo not repeat any of these: ${exclude.join(', ')}.`;
     if (krillionTaken) user += `\nThe one "krillion" answer for this prompt is already on the list: do not use the "krillion" tier at all.`;
     const fb = feedback || {};
@@ -358,6 +406,13 @@ Example reply for the prompt "Name a fruit":
     }
     if (known.rejected && known.rejected.length) {
       user += `\nThe game rejected these on this prompt before, so never suggest them: ${known.rejected.join(', ')}.`;
+    }
+    const similar = (fb.similar || []).filter((s) => s.answers && s.answers.length);
+    if (similar.length) {
+      user +=
+        `\nSimilar prompts the game has asked before (answers it accepted). They are only references: check each against THIS prompt's exact wording, ` +
+        `and use one only if it truly satisfies this prompt:\n` +
+        similar.map((s) => `- "${s.q}": ${s.answers.map((a) => (a.tier ? `${a.text} (${a.tier})` : a.text)).join(', ')}`).join('\n');
     }
     if (fb.lessons && fb.lessons.length) {
       user += `\nLessons from how the game scored your earlier answers:\n${fb.lessons.map((l) => `- ${l}`).join('\n')}`;
@@ -576,7 +631,10 @@ Example reply for the prompt "Name a fruit":
   //   krillionTaken – a krillion answer is already listed for this prompt (only one may exist)
   //   single   – exactly ONE model request: no follow-up requests for missing answers. To make up for that, the
   //              model is asked for 2 extra answers and the reply is still cut at `count` (see the daily dive)
-  async function runSuggest({ settings, question, fetchImpl = fetch, signal, onSuggestion, want, exclude = [], feedback, krillionTaken = false, single = false }) {
+  //   validate   – (text) => 'word' | 'partial' | 'none' | null, for English-word prompts (a local dictionary):
+  //                'none' answers are dropped, 'partial' ones are kept and marked `dict:'partial'`
+  //   candidates – real words to offer the model for an English-word prompt
+  async function runSuggest({ settings, question, fetchImpl = fetch, signal, onSuggestion, want, exclude = [], feedback, krillionTaken = false, single = false, validate = null, candidates = [], rarest = false }) {
     const s = { ...DEFAULTS, ...settings };
     if (!normalizeBase(s.baseUrl)) throw fail('not-configured', 'Set the API base URL in the extension settings.');
     if (!s.model) throw fail('not-configured', 'Set a model name in the extension settings.');
@@ -613,15 +671,30 @@ Example reply for the prompt "Name a fruit":
     const results = [];
     // Answers shown before never come back, nor anything near-identical to an answer already in this reply.
     const seen = new DupSet(baseExclude);
+    // Answers the game already rejected on this prompt are refused if the model offers them anyway. Matched
+    // EXACTLY (never fuzzily): a rejected typo must not block the correct spelling.
+    const rejectedKeys = new Set(((feedback && feedback.known && feedback.known.rejected) || []).map(answerKey));
     // The game has exactly one "krillion" answer per prompt. Any further one is a mislabel: demote it.
     const gemTaken = () => krillionTaken || results.some((r) => r.tier === 'krillion');
     const emit = (item) => {
-      if (!answerKey(item.text) || seen.has(item.text) || results.length >= count) return;
+      if (!answerKey(item.text) || seen.has(item.text) || (rarest ? pool.length >= RAREST_POOL : results.length >= count)) return;
+      if (rejectedKeys.has(answerKey(item.text))) return;
       seen.add(item.text);
+      if (validate) {
+        // English-word prompt: the dictionary decides. Not a word, or breaks the prompt's pattern: dropped.
+        const d = validate(item.text);
+        if (d === 'none') return;
+        if (d) item = { ...item, dict: d };
+      }
       if (item.tier === 'krillion' && gemTaken()) item = { ...item, tier: 'deepcut' };
+      if (rarest) {
+        pool.push(item); // "find rarest": candidates are held back; only the single best one is shown (below)
+        return;
+      }
       results.push(item);
       if (onSuggestion) onSuggestion(item);
     };
+    const pool = [];
 
     // One request: stream the reply, emitting answers as they complete.
     const round = async (extra) => {
@@ -659,12 +732,23 @@ Example reply for the prompt "Name a fruit":
       stream.flush().forEach(emit);
     };
 
-    await round({ want: single ? Math.min(15, count + 2) : count, exclude: baseExclude, feedback, krillionTaken });
+    await round({ want: rarest ? RAREST_POOL : single ? Math.min(15, count + 2) : count, exclude: baseExclude, feedback, krillionTaken, candidates, rarest });
+
+    if (rarest) {
+      // ONE answer: a few candidates were asked for so a mislabelled or filtered one doesn't leave nothing.
+      // The rarest label wins; ties go to the model's own ranking (it was told to put the rarest first).
+      let best = null;
+      for (const it of pool) if (!best || TIERS.indexOf(it.tier) > TIERS.indexOf(best.tier)) best = it;
+      if (best) {
+        results.push(best);
+        if (onSuggestion) onSuggestion(best);
+      }
+    }
 
     // Models often return fewer than asked. Ask for just the missing ones (at most twice),
     // telling the model what it already gave. A failure here keeps what we already have.
     // Not in single-request mode: that is exactly one request.
-    const maxTopups = single ? 0 : MAX_TOPUPS;
+    const maxTopups = single || rarest ? 0 : MAX_TOPUPS;
     for (let top = 0; top < maxTopups && results.length > 0 && results.length < count; top++) {
       const before = results.length;
       try {
@@ -673,6 +757,8 @@ Example reply for the prompt "Name a fruit":
           exclude: [...baseExclude, ...results.map((r) => r.text)],
           feedback,
           krillionTaken: gemTaken(),
+          candidates,
+          rarest,
         });
       } catch (e) {
         if (e.name === 'AbortError') throw e;
@@ -783,10 +869,11 @@ Respond with a single JSON object and nothing else: {"lessons":["...","..."]}`;
     exampleReply,
     sanitizeFeedback,
     normKey,
+    isEnglishWordPrompt,
     answerKey,
     isDuplicate,
     DupSet,
-    memory: { newMemory, cleanMemory, pruneMemory, recordShown, setVerdict, applyOutcome, shownFor, excludeFor, hasKrillion, feedbackFor, TTL_MS: MEMORY_TTL_MS },
+    memory: { newMemory, cleanMemory, pruneMemory, startGame, recordShown, setVerdict, applyOutcome, shownFor, excludeFor, hasKrillion, feedbackFor, TTL_MS: MEMORY_TTL_MS },
     normalizeBase,
     endpointUrl,
     originPattern,
