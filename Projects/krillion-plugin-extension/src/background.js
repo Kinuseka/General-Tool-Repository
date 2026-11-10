@@ -1,6 +1,6 @@
 // Service worker. Holds the API key and makes the AI request, so the key never
 // enters the krillion.io page and the request isn't subject to the page's CORS.
-importScripts('ai-core.js', 'dictionary.js');
+importScripts('debug-log.js', 'ai-core.js', 'dictionary.js');
 
 const { DEFAULTS, runSuggest, runReflect, originPattern, isEnglishWordPrompt } = self.KrillionAI;
 const { Dictionary, grounding } = self.KrillionDict;
@@ -70,8 +70,9 @@ chrome.runtime.onConnect.addListener((port) => {
       await assertAccess(settings.baseUrl);
       const question = String(msg.question || '').slice(0, 400);
       const exclude = strs(msg.exclude, 60);
+      KrillionDebug.log('suggest-request', { question, want: msg.want, single: msg.single === true, rarest: msg.rarest === true, exclude, feedback: msg.feedback });
       const { validate, candidates } = await dictionaryFor(question, exclude);
-      await runSuggest({
+      const got = await runSuggest({
         settings,
         question,
         validate,
@@ -85,8 +86,10 @@ chrome.runtime.onConnect.addListener((port) => {
         signal: controller.signal,
         onSuggestion: (s) => port.postMessage({ type: 'suggestion', suggestion: s }),
       });
+      KrillionDebug.log('suggest-done', { question, answers: got.map((s) => s.text) });
       port.postMessage({ type: 'done' });
     } catch (e) {
+      KrillionDebug.log('suggest-error', { message: String(e && (e.message || e)), code: e && e.code, name: e && e.name });
       if (disconnected) return; // the page cancelled or moved on; nobody is listening
       const message = e.name === 'AbortError' ? 'The AI request timed out or was cancelled.' : e.message || String(e);
       try {

@@ -206,6 +206,25 @@
       }, 900);
     }
 
+    // Click-to-type: the page side puts the word in the game's answer box (never submits) and says how it went.
+    const FILL_MSG = { ok: 'typed', none: 'no answer box', locked: 'not your turn', stopped: 'stopped' };
+    async function fill(li, text) {
+      const label = li.querySelector('.tier');
+      const old = label.textContent;
+      let res = 'none';
+      try {
+        res = await handlers.onType(text);
+      } catch (_) {
+        /* reported as "no answer box" */
+      }
+      li.classList.add('copied');
+      label.textContent = FILL_MSG[res] || FILL_MSG.none;
+      setTimeout(() => {
+        li.classList.remove('copied');
+        label.textContent = old;
+      }, 900);
+    }
+
     // s = {text, tier, why?, v?, act?, out?, as?}   (as: the game's own term when it accepted this as another one)
     //   tier  the model's predicted rarity (the dot)            v   'good' | 'bad': the player's / the game's verdict
     //   act   the rarity the GAME gave it (the label)            out 'accepted' | 'miss' | 'taken': what the game said
@@ -214,6 +233,7 @@
       dot.style.background = TIER_COLORS[s.tier] || '#3d4f6e';
       // "≈": the game accepted it, but recorded a different (canonical) term for it.
       const label = s.out === 'miss' ? 'rejected' : s.out === 'taken' ? 'taken' : `${s.act || s.tier || ''}${s.as ? ' ≈' : ''}${s.dict === 'partial' ? ' ◐' : ''}${s.known && !s.out ? ' ◆' : ''}`.trim();
+      const typeOn = !!(handlers.canType && handlers.canType() && handlers.onType); // click fills the game's answer box
       const copyOn = !handlers.canCopy || handlers.canCopy(); // off: rows are read-only, so answers get typed by hand
       const hint = [
         s.why,
@@ -223,7 +243,7 @@
         s.known ? `◆ The game has accepted this on this prompt before (${s.known}×) and rated it ${s.tier}${s.raw ? `; the AI guessed ${s.raw}` : ''}.` : null,
         !s.known && s.raw ? `The AI guessed ${s.raw}; adjusted to ${s.tier} from how the game has rated its labels so far.` : null,
         s.act ? `You predicted ${s.raw || s.tier || '?'}, the game rated it ${s.act}.` : null,
-        copyOn ? 'click to copy' : null,
+        typeOn ? 'click to type it into the answer box' : copyOn ? 'click to copy' : null,
       ].filter(Boolean).join('  ·  ');
       const yes = h('button', { type: 'button', class: `vb yes${s.v === 'good' ? ' on' : ''}`, title: 'Correct: the game accepted it (click again to undo)', text: '✓' });
       const no = h('button', { type: 'button', class: `vb no${s.v === 'bad' ? ' on' : ''}`, title: 'Wrong: the game rejected it (click again to undo)', text: '✗' });
@@ -245,7 +265,8 @@
       };
       yes.addEventListener('click', vote('good'));
       no.addEventListener('click', vote('bad'));
-      if (copyOn) li.addEventListener('click', () => copy(li, s.text));
+      if (typeOn) li.addEventListener('click', () => fill(li, s.text));
+      else if (copyOn) li.addEventListener('click', () => copy(li, s.text));
       else li.style.cursor = 'default';
       return li;
     }

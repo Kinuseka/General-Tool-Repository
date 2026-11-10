@@ -2121,6 +2121,77 @@ test('memory: "already suggested" is per game; a new game may get the same words
   assert.deepEqual(ai.memory.excludeFor(M, Q, 1007), ['Trout']);
 });
 
+test('click-to-type: keystroke gaps follow the WPM range, randomness and hesitations, never inverted', () => {
+  const seq = (...v) => {
+    let i = 0;
+    return () => v[i++];
+  };
+  // first draw = speed, second = hesitation check
+  assert.equal(ai.keyGapMs(60, 80, 100, seq(0, 0.99)), 200); // 60 WPM = 200 ms a character
+  assert.equal(ai.keyGapMs(60, 80, 100, seq(0.999, 0.99)), 150); // 80 WPM = 150 ms
+  assert.equal(ai.keyGapMs(60, 80, 0, seq(0, 0.99)), 171); // randomness 0: always the middle, 70 WPM
+  assert.equal(ai.keyGapMs(60, 80, 100, seq(0.5, 0)), 343); // hesitation: double pause
+  assert.equal(ai.keyGapMs(60, 80, 100, seq(0.5, 0.99)), 171); // no hesitation on this draw
+  assert.equal(ai.keyGapMs(80, 60, 100, seq(0, 0.99)), 200); // swapped bounds still give 60–80
+  assert.equal(ai.keyGapMs(1000, 1000, 100, seq(0, 0.99)), 60); // clamped to 200 WPM
+  assert.equal(ai.keyGapMs(60, 80, 500, seq(0.999, 0.99)), 150); // randomness clamped to 100
+});
+
+test('click-to-type plan: with no typos the steps type the word exactly; with typos the Backspaces correct them', () => {
+  const seeded = (seed) => () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  const type = (steps) => steps.reduce((v, s) => (s.backspace ? v.slice(0, -1) : v + s.char), '');
+  const base = { wpmMin: 60, wpmMax: 80, randomness: 100, burstWpm: 100, pausePct: 0, typoPct: 0 };
+  const plain = ai.planKeystrokes('Name a fish', base, seeded(7));
+  assert.equal(type(plain), 'Name a fish');
+  assert.ok(plain.every((s) => !s.backspace && s.gap > 0));
+  const typos = ai.planKeystrokes('Mongolia', { ...base, typoPct: 100 }, seeded(11));
+  assert.equal(type(typos), 'Mongolia'); // every slip is corrected
+  assert.ok(typos.some((s) => s.backspace));
+  assert.equal(ai.planKeystrokes('abc', { ...base, typoPct: 0 }, seeded(3)).length, 3);
+});
+test('click-to-type plan: each word\'s first letter is sometimes typed in lower case, only when chance says so', () => {
+  const seeded = (seed) => () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  const type = (steps) => steps.reduce((v, s) => (s.backspace ? v.slice(0, -1) : v + s.char), '');
+  const base = { wpmMin: 60, wpmMax: 80, randomness: 100, burstWpm: 100, pausePct: 0, typoPct: 0 };
+  assert.equal(type(ai.planKeystrokes('Australia', { ...base, lowerFirstPct: 0 }, seeded(4))), 'Australia');
+  assert.equal(type(ai.planKeystrokes('Australia', { ...base, lowerFirstPct: 100 }, seeded(4))), 'australia');
+  assert.equal(type(ai.planKeystrokes('New Zealand', { ...base, lowerFirstPct: 100 }, seeded(4))), 'new zealand'); // every word
+  assert.equal(type(ai.planKeystrokes('New Zealand', { ...base, lowerFirstPct: 0 }, seeded(4))), 'New Zealand');
+  assert.equal(type(ai.planKeystrokes('iPhone 15', { ...base, lowerFirstPct: 100 }, seeded(4))), 'iPhone 15'); // only word starts, and only upper case ones change
+});
+test('click-to-type plan: pauses add time, bursts use the burst speed', () => {
+  const seeded = (seed) => () => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  const text = 'abcdefghijklmnopqrstuvwxyz';
+  const calm = ai.planKeystrokes(text, { wpmMin: 60, wpmMax: 60, randomness: 0, burstWpm: 60, pausePct: 0, typoPct: 0 }, seeded(5));
+  assert.ok(calm.every((s) => s.gap === 200)); // 60 WPM, no bursts, no pauses
+  const paused = ai.planKeystrokes(text, { wpmMin: 60, wpmMax: 60, randomness: 0, burstWpm: 60, pausePct: 100, typoPct: 0 }, seeded(5));
+  assert.ok(paused.every((s) => s.gap >= 600)); // every letter paused
+  const bursty = ai.planKeystrokes(text.repeat(4), { wpmMin: 40, wpmMax: 40, randomness: 0, burstWpm: 200, pausePct: 0, typoPct: 0 }, seeded(9));
+  assert.ok(bursty.some((s) => s.gap === 60)); // 200 WPM burst letters
+  assert.ok(bursty.some((s) => s.gap === 300)); // 40 WPM normal letters
+});
+test('debug log: silent when Debug mode is off, and never throws outside the extension', () => {
+  const dl = require('../src/debug-log.js');
+  const seen = [];
+  const real = console.log;
+  console.log = (...a) => seen.push(a);
+  try {
+    assert.doesNotThrow(() => dl.log('ai-request', { any: 1 }));
+  } finally {
+    console.log = real;
+  }
+  assert.equal(seen.length, 0);
+});
+
 // ---- manifest sanity ----------------------------------------------------------------
 test('manifest: every referenced file exists', () => {
   const root = path.join(__dirname, '..');

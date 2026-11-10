@@ -57,11 +57,95 @@
     onVerdict: (item, verdict) => setVerdict(item, verdict),
     // The game measures how an answer was entered (keystrokes, pastes); clicking a row copies it to paste.
     canCopy: () => settings.copyOnClick !== false,
+    canType: () => settings.typeOnClick === true,
+    onType: (text) => typeIntoGame(text),
     onPower: (on) => patchSettings({ overlayEnabled: on }),
     onCollapse: (collapsed) => patchSettings({ collapsed }),
     onMove: (pos) => queue(() => store.set({ overlayPos: pos })),
     onSettings: () => chrome.runtime.sendMessage({ type: 'open-options' }).catch(() => {}),
   });
+
+  // Click-to-type (opt-in): type the word into the game's answer box as simulated keystrokes. It only fills the box: you press Enter / SEND.
+  // The answer box is the widest visible text input that is not a chat box. Returns 'ok' | 'none' | 'locked'.
+  // One typing job at a time: a new click stops the one in progress (its pending keystrokes are cancelled).
+  let typing = null;
+  function stopTyping() {
+    if (!typing) return;
+    const job = typing;
+    typing = null;
+    job.stop();
+  }
+
+  function typeIntoGame(text) {
+    const chatLike = (el) => /chat|say something|message/i.test([el.placeholder, el.id, el.name, el.className, el.getAttribute('aria-label')].join(' '));
+    const boxes = [...document.querySelectorAll('input:not([type]), input[type="text"], input[type="search"], textarea')].filter((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 40 && r.height > 10 && getComputedStyle(el).visibility !== 'hidden' && !chatLike(el);
+    });
+    if (!boxes.length) return 'none';
+    const box = boxes.reduce((a, b) => (b.getBoundingClientRect().width > a.getBoundingClientRect().width ? b : a));
+    if (box.disabled || box.readOnly) return 'locked'; // between turns the game locks the box
+    const proto = box instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(proto, 'value').set; // the game's framework listens for real input events
+    const set = (v, data, inputType) => {
+      setter.call(box, v);
+      box.dispatchEvent(new InputEvent('input', { bubbles: true, data, inputType }));
+    };
+    KrillionDebug.log('type-start', { text, box: box.tagName, id: box.id || null, width: Math.round(box.getBoundingClientRect().width) });
+    stopTyping(); // stop whatever was being typed, then clear the box and start this word
+    box.focus();
+    if (box.value) set('', null, 'deleteContent');
+    // One simulated keystroke per character (keydown, input, keyup), so a game that builds its text from key
+    // events or counts them sees typing. These are script-made events (isTrusted: false), which the game can tell
+    // from real ones. Resolves 'ok' when the whole word is in the box.
+    // Speed from Settings → Show: a random words-per-minute between the two bounds, for every keystroke.
+    return new Promise((resolve) => {
+      // The plan (characters, Backspaces, bursts, pauses, typos) comes from ai-core's planKeystrokes.
+      const steps = globalThis.KrillionAI.planKeystrokes(text, {
+        wpmMin: settings.typeWpmMin,
+        wpmMax: settings.typeWpmMax,
+        randomness: settings.typeRandomness,
+        // Simple mode (Advanced typing settings off) uses the built-in values for the three advanced ones.
+        burstWpm: settings.typeAdvanced ? settings.typeBurstWpm : DEFAULTS.typeBurstWpm,
+        pausePct: settings.typeAdvanced ? settings.typePausePct : DEFAULTS.typePausePct,
+        typoPct: settings.typeAdvanced ? settings.typeTypoPct : DEFAULTS.typeTypoPct,
+        lowerFirstPct: settings.typeAdvanced ? settings.typeLowerFirstPct : DEFAULTS.typeLowerFirstPct,
+      });
+      let i = 0;
+      const job = {
+        timer: null,
+        stop: () => {
+          clearTimeout(job.timer);
+          resolve('stopped');
+        },
+      };
+      typing = job;
+      const step = () => {
+        if (i >= steps.length) {
+          if (typing === job) typing = null;
+          KrillionDebug.log('type-done', { text, value: box.value, steps: steps.length });
+          return resolve('ok');
+        }
+        const s = steps[i++];
+        if (s.backspace) {
+          const k = { key: 'Backspace', code: 'Backspace', bubbles: true, cancelable: true };
+          box.dispatchEvent(new KeyboardEvent('keydown', k));
+          set(box.value.slice(0, -1), null, 'deleteContentBackward');
+          box.dispatchEvent(new KeyboardEvent('keyup', k));
+        } else {
+          const ch = s.char;
+          const code = /[a-z]/i.test(ch) ? `Key${ch.toUpperCase()}` : /\d/.test(ch) ? `Digit${ch}` : ch === ' ' ? 'Space' : '';
+          const k = { key: ch, code, bubbles: true, cancelable: true };
+          box.dispatchEvent(new KeyboardEvent('keydown', k));
+          box.dispatchEvent(new KeyboardEvent('keypress', k));
+          set(box.value + ch, ch, 'insertText');
+          box.dispatchEvent(new KeyboardEvent('keyup', k));
+        }
+        job.timer = setTimeout(step, s.gap);
+      };
+      step();
+    });
+  }
 
   function patchSettings(patch) {
     const before = configKey();
@@ -203,6 +287,7 @@
   // One result from the game, from the party websocket or the daily /api/submit reply:
   //   {q, answer, typed?, kind, tier, mine?}   mine = the player typed it themselves
   function processOutcome(o, now) {
+    KrillionDebug.log('game-ruling', { q: o.q, answer: o.answer, kind: o.kind, tier: o.tier, mine: !!o.mine, source: o.source, fromAck: !!o.fromAck });
     if (!o.q) return; // category unknown (joined mid-game): the raw event is still recorded
     // `typed` is set when the game accepted what a player typed but recorded a different term.
     // fromAck: this result came from our own submit's reply; the game's event for it is counted separately.
@@ -505,6 +590,7 @@
             Learn.recordSuggested(learned, r.text, item.text, aiTier, Date.now());
             persistLearned();
           }
+          KrillionDebug.log('suggestion-shown', { question: r.text, text: item.text, tier: item.tier, aiTier: item.raw || null, known: item.known || null });
           r.items.push(item);
           Mem.recordShown(memory, r.text, item, Date.now());
           persistMemory();
@@ -677,6 +763,7 @@
 
   function present(q, { mode = 'initial' } = {}) {
     current = q;
+    KrillionDebug.log('present', { text: q.text, source: q.source || null, label: q.label || null });
     const gk =
       q.text && q.source === 'daily' ? `daily:${daily ? daily.date : ''}`
       : q.text && q.source === 'party' ? (tracker && q.code && tracker.gameKey(q.code)) || `party:${q.label}`

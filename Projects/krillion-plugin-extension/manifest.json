@@ -26,7 +26,7 @@
     },
     {
       "matches": ["https://krillion.io/*", "https://www.krillion.io/*"],
-      "js": ["src/core.js", "src/ai-core.js", "src/learn.js", "src/party-data.js", "src/profile.js", "src/summary.js", "src/raw-record.js", "src/overlay.js", "src/bridge.js"],
+      "js": ["src/debug-log.js", "src/core.js", "src/ai-core.js", "src/learn.js", "src/party-data.js", "src/profile.js", "src/summary.js", "src/raw-record.js", "src/overlay.js", "src/bridge.js"],
       "run_at": "document_start"
     }
   ]

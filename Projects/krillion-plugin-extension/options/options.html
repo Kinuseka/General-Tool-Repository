@@ -17,6 +17,37 @@
       <label class="switch" for="overlayEnabled"><span>Floating window <span class="muted">(Alt+K toggles it on the page)</span></span><input type="checkbox" id="overlayEnabled"><span class="track"></span></label>
       <label class="switch" for="enabled"><span>AI suggestions</span><input type="checkbox" id="enabled"><span class="track"></span></label>
       <label class="switch" for="copyOnClick"><span>Click a suggestion to copy it</span><input type="checkbox" id="copyOnClick"><span class="track"></span></label>
+      <label class="switch" for="typeOnClick"><span>Click a suggestion to type it into the answer box <span class="muted">(instead of copying)</span></span><input type="checkbox" id="typeOnClick"><span class="track"></span></label>
+      <details id="typeSettings">
+        <summary>Typing speed and randomness <span class="muted">(click to hide)</span></summary>
+        <div class="grid">
+        <label>Typing speed, min WPM <span class="muted">(variability range, 20–200)</span>
+          <input type="number" id="typeWpmMin" min="20" max="200" step="5">
+        </label>
+        <label>Typing speed, max WPM <span class="muted">(variability range, 20–200)</span>
+          <input type="number" id="typeWpmMax" min="20" max="200" step="5">
+        </label>
+        <label>Randomness level <span class="muted">(0 = steady, 100 = fully varied, with occasional hesitations)</span>
+          <input type="number" id="typeRandomness" min="0" max="100" step="5">
+        </label>
+        </div>
+        <label class="switch" for="typeAdvanced"><span>Advanced typing settings <span class="muted">(burst speed, pauses, typos). Off = simple: built-in values</span></span><input type="checkbox" id="typeAdvanced"><span class="track"></span></label>
+        <div class="grid" id="typeAdvancedFields" hidden>
+          <label>Burst speed, WPM <span class="muted">(speed during a run of quick letters, 20–200)</span>
+            <input type="number" id="typeBurstWpm" min="20" max="200" step="5">
+          </label>
+          <label>Pause chance <span class="muted">(% of letters followed by a longer pause, 0–100)</span>
+            <input type="number" id="typePausePct" min="0" max="100" step="1">
+          </label>
+          <label>Typo chance <span class="muted">(% of letters mistyped then corrected with Backspace, 0–100)</span>
+            <input type="number" id="typeTypoPct" min="0" max="100" step="1">
+          </label>
+          <label>Lower-case word start chance <span class="muted">(% of words whose first letter is typed in lower case, 0–100)</span>
+            <input type="number" id="typeLowerFirstPct" min="0" max="100" step="1">
+          </label>
+        </div>
+      </details>
+      <p class="note"><strong>Use with care.</strong> This types the word into the game's answer box for you as simulated keystrokes; you still press Enter or SEND. The game records how every answer was entered, including counters for <em>synthetic</em> input, and script-made keystrokes can be told apart from real ones, so it may look automated to the game. That is your call and your account; it is off by default. It does not submit anything.</p>
       <p class="note">With every answer you submit, the game receives how it was entered: keystroke count and timing, and counters for <em>pastes</em> and synthetic input (seen in its websocket traffic). Pasting a copied suggestion registers as a paste. This is your call; turn the switch off and the rows become read-only, so you type answers yourself.</p>
       <label class="switch" for="dailySingleRequest"><span>Daily dive: one AI request per page load</span><input type="checkbox" id="dailySingleRequest"><span class="track"></span></label>
       <p class="note">Only the first daily question that appears gets a request, and that request is a single call with no follow-ups for missing answers (it asks for 2 extra to make up for that). The other six wait until you reload, or until you press ↻ or "+ more" on them. A list the extension already remembers is shown without any request. Party rounds are not affected.</p>
@@ -107,7 +138,14 @@
       <button type="button" id="test" class="btn">Save &amp; test</button>
       <span id="msg" role="status"></span>
     </div>
+
+    <section id="debugSection">
+      <h2>Debug mode</h2>
+      <label class="switch" for="debugMode"><span>Debug mode <span class="muted">(writes detailed logs to the browser console)</span></span><input type="checkbox" id="debugMode"><span class="track"></span></label>
+      <p class="note">When on, the console shows the full AI requests and replies, the dictionary and app decisions, and what the game ruled. Game-side logs appear in the krillion.io page console (F12); AI requests and replies appear in the extension's service worker console (chrome://extensions → Krillion Question Reader → "service worker"). Logs may contain your prompts and the AI's replies. Your API key is never logged.</p>
+    </section>
   </main>
+  <script src="../src/debug-log.js"></script>
   <script src="../src/ai-core.js"></script>
   <script src="options.js"></script>
 </body>

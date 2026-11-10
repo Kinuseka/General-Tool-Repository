@@ -71,6 +71,16 @@ Example reply for the prompt "Name a fruit":
     reflectAtGameEnd: true, // after a finished game, ask the AI (one extra request) for lessons from the game summary
     collectParty: false, // opt-in: also keep every party event as an exportable dataset
     recordRaw: false, // opt-in: record every websocket frame, both directions, unfiltered (names and chat included)
+    typeOnClick: false, // clicking a suggestion types it into the game's answer box instead (never submits). Off: see README
+    typeWpmMin: 60, // click-to-type: slowest typing speed, in words per minute (5 characters = 1 word)
+    typeWpmMax: 80, // click-to-type: fastest typing speed; each keystroke picks a random speed between min and max
+    debugMode: false, // Settings → Debug mode: record the full AI requests and replies, decisions and game results (src/debug-log.js)
+    typeBurstWpm: 100, // click-to-type: speed during a burst of quick letters
+    typePausePct: 5, // click-to-type: % chance per letter of a longer pause
+    typeLowerFirstPct: 0, // click-to-type (advanced): % chance the first letter is typed in lower case
+    typeAdvanced: false,// click-to-type: off = simple (built-in burst speed 100, pauses 5%, no typos); on = use the three values below
+    typeTypoPct: 0, // click-to-type: % chance per letter of a typo, noticed and corrected with Backspace (advanced; off by default)
+    typeRandomness: 100, // click-to-type: 0 = every letter at the middle speed, 100 = anywhere in the range, with occasional hesitations
     copyOnClick: true, // clicking a suggestion copies it (pasting shows up in the game's input telemetry: see README)
     adaptToMe: true, // send the player's own accepted answers (and "interests") with requests so suggestions follow their leanings
     interests: '', // optional, in the player's own words, e.g. "I know Japanese and Korean pop culture and food"
@@ -191,6 +201,79 @@ Example reply for the prompt "Name a fruit":
     }
     if (!e && create) e = m.entries[key] = { q: String(question), shown: [], at: now };
     return e || null;
+  }
+
+  // Gap between two simulated keystrokes, for click-to-type. A typing speed of W words per minute (5 characters
+  // to a word) is 12000 / W ms per character. Each keystroke picks a speed at random between min and max WPM, so
+  // the rhythm is uneven like a person's. Bounds are clamped to 20–200 WPM; max is never below min.
+  //   randomness 0–100: how far a letter's speed may stray from the middle of the range (0 = steady). At 100 a
+  //   letter also has a chance (up to 5%) of a hesitation: a pause twice as long.
+  function keyGapMs(minWpm, maxWpm, randomness = 100, rnd = Math.random) {
+    let lo = Math.min(200, Math.max(20, Number(minWpm) || 60));
+    let hi = Math.min(200, Math.max(20, Number(maxWpm) || 80));
+    if (hi < lo) [lo, hi] = [hi, lo];
+    const amount = Math.min(1, Math.max(0, (Number.isFinite(Number(randomness)) ? Number(randomness) : 100) / 100));
+    const mid = (lo + hi) / 2;
+    const half = (hi - lo) / 2;
+    const wpm = mid + (rnd() * 2 - 1) * half * amount;
+    let gap = 12000 / wpm;
+    if (rnd() < amount * 0.05) gap *= 2;
+    return Math.round(gap);
+  }
+
+  // Plans the simulated keystrokes for click-to-type: a list of steps, each either a character to type or a
+  // Backspace, each with the pause that follows it (ms). Pure, so it is tested without a page.
+  //   wpmMin / wpmMax / randomness  the normal speed (see keyGapMs)
+  //   burstWpm                       speed during a burst: a run of 2–5 letters typed quickly, started now and then
+  //   pausePct                       % chance per letter of a longer pause (0.4–1.3 s) before it
+  //   typoPct                        % chance per letter of a slip: a neighbouring key is typed, noticed, Backspace, then the right letter
+  const TYPO_NEAR = {
+    q: 'wa', w: 'qes', e: 'wrd', r: 'etf', t: 'ryg', y: 'tuh', u: 'yij', i: 'uok', o: 'ipl', p: 'o',
+    a: 'qsz', s: 'awdx', d: 'sefc', f: 'drgv', g: 'fthb', h: 'gyjn', j: 'hukm', k: 'jilo', l: 'kop',
+    z: 'asx', x: 'zsdc', c: 'xdfv', v: 'cfgb', b: 'vghn', n: 'bhjm', m: 'njk',
+  };
+  const BURST_START = 0.2; // chance per letter (outside a burst) that a burst begins
+  function planKeystrokes(text, o = {}, rnd = Math.random) {
+    const pct = (v, d) => (Number.isFinite(Number(v)) ? Math.min(100, Math.max(0, Number(v))) : d) / 100;
+    const burstW = Math.min(200, Math.max(20, Number(o.burstWpm) || 100));
+    const pauseP = pct(o.pausePct, 0);
+    const typoP = pct(o.typoPct, 0);
+    const steps = [];
+    let burst = 0; // letters still to type in the current burst
+    // Each word's first letter may be typed in lower case (people often do): "new zealand" for "New Zealand".
+    const chars = [...String(text)];
+    const lowerFirstP = pct(o.lowerFirstPct, 0);
+    if (lowerFirstP) {
+      for (let i = 0; i < chars.length; i++) {
+        const wordStart = i === 0 || /\s/.test(chars[i - 1]);
+        if (wordStart && chars[i] !== chars[i].toLowerCase() && rnd() < lowerFirstP) chars[i] = chars[i].toLowerCase();
+      }
+    }
+    for (const ch of chars) {
+      let gap;
+      if (burst > 0) {
+        burst--;
+        gap = keyGapMs(burstW, burstW, 0, rnd);
+      } else if (rnd() < BURST_START) {
+        burst = 1 + Math.floor(rnd() * 4); // this letter starts a burst of 2–5
+        gap = keyGapMs(burstW, burstW, 0, rnd);
+      } else {
+        gap = keyGapMs(o.wpmMin, o.wpmMax, o.randomness, rnd);
+      }
+      if (rnd() < pauseP) gap += 400 + Math.round(rnd() * 900);
+      const lower = ch.toLowerCase();
+      if (typoP && TYPO_NEAR[lower] && rnd() < typoP) {
+        const near = TYPO_NEAR[lower];
+        let wrong = near[Math.floor(rnd() * near.length)];
+        if (ch !== lower) wrong = wrong.toUpperCase();
+        steps.push({ char: wrong, gap });
+        steps.push({ backspace: true, gap: 150 + Math.round(rnd() * 250) }); // noticed the slip
+        steps.push({ char: ch, gap: 120 + Math.round(rnd() * 200) });
+      } else {
+        steps.push({ char: ch, gap });
+      }
+    }
+    return steps;
   }
 
   // What was suggested belongs to ONE game (or day). When the same prompt turns up in a different game, the
@@ -596,6 +679,11 @@ Example reply for the prompt "Name a fruit":
   }
 
   // ---- request ---------------------------------------------------------------
+  // Debug log entry (only recorded when Debug mode is on; a no-op where the log is not loaded).
+  const dbg = (kind, data) => {
+    if (globalThis.KrillionDebug) globalThis.KrillionDebug.log(kind, data);
+  };
+
   async function post(fetchImpl, s, question, signal, opts, extra) {
     const headers = { 'Content-Type': 'application/json' };
     if (s.apiKey) headers.Authorization = `Bearer ${s.apiKey}`;
@@ -608,6 +696,7 @@ Example reply for the prompt "Name a fruit":
     const temp = s.temperature === '' || s.temperature === null ? null : Number(s.temperature);
     if (opts.temperature && temp !== null && Number.isFinite(temp)) body.temperature = temp;
     if (opts.json) body.response_format = { type: 'json_object' };
+    dbg('ai-request', { question, endpoint: endpointUrl(s.baseUrl), body }); // the full request (no API key)
     const res = await fetchImpl(endpointUrl(s.baseUrl), { method: 'POST', headers, signal, body: JSON.stringify(body) });
     if (res.ok) return res;
     const text = await res.text().catch(() => '');
@@ -677,16 +766,19 @@ Example reply for the prompt "Name a fruit":
     // The game has exactly one "krillion" answer per prompt. Any further one is a mislabel: demote it.
     const gemTaken = () => krillionTaken || results.some((r) => r.tier === 'krillion');
     const emit = (item) => {
-      if (!answerKey(item.text) || seen.has(item.text) || (rarest ? pool.length >= RAREST_POOL : results.length >= count)) return;
-      if (rejectedKeys.has(answerKey(item.text))) return;
+      if (!answerKey(item.text) || seen.has(item.text) || (rarest ? pool.length >= RAREST_POOL : results.length >= count)) {
+        return dbg('ai-dropped', { text: item.text, tier: item.tier, why: 'duplicate, empty, or enough answers already' });
+      }
+      if (rejectedKeys.has(answerKey(item.text))) return dbg('ai-dropped', { text: item.text, why: 'the game rejected it on this prompt' });
       seen.add(item.text);
       if (validate) {
         // English-word prompt: the dictionary decides. Not a word, or breaks the prompt's pattern: dropped.
         const d = validate(item.text);
-        if (d === 'none') return;
+        if (d === 'none') return dbg('ai-dropped', { text: item.text, why: 'dictionary: not a word, or breaks the pattern' });
         if (d) item = { ...item, dict: d };
       }
       if (item.tier === 'krillion' && gemTaken()) item = { ...item, tier: 'deepcut' };
+      dbg('ai-item', { text: item.text, tier: item.tier, dict: item.dict || null, mode: rarest ? 'find rarest (held back)' : 'shown' });
       if (rarest) {
         pool.push(item); // "find rarest": candidates are held back; only the single best one is shown (below)
         return;
@@ -700,10 +792,12 @@ Example reply for the prompt "Name a fruit":
     const round = async (extra) => {
       const res = await open(extra);
       const stream = new AnswerStream();
+      const rawParts = []; // the reply's text as it arrived, for the debug log
       const ct = (res.headers && res.headers.get && res.headers.get('content-type')) || '';
       if (!res.body || /application\/json/i.test(ct)) {
         // Provider ignored stream:true and sent one JSON document.
         const json = await res.json();
+        rawParts.push(extractDelta(json));
         stream.push(extractDelta(json)).forEach(emit);
       } else {
         const reader = res.body.getReader();
@@ -724,12 +818,14 @@ Example reply for the prompt "Name a fruit":
             } catch (_) {
               continue;
             }
+            rawParts.push(extractDelta(json));
             stream.push(extractDelta(json)).forEach(emit);
           }
         }
         if (results.length >= count || done) reader.cancel().catch(() => {});
       }
       stream.flush().forEach(emit);
+      dbg('ai-reply', { question, text: rawParts.join('') }); // the model's full reply, exactly as received
     };
 
     await round({ want: rarest ? RAREST_POOL : single ? Math.min(15, count + 2) : count, exclude: baseExclude, feedback, krillionTaken, candidates, rarest });
@@ -873,6 +969,8 @@ Respond with a single JSON object and nothing else: {"lessons":["...","..."]}`;
     answerKey,
     isDuplicate,
     DupSet,
+    keyGapMs,
+    planKeystrokes,
     memory: { newMemory, cleanMemory, pruneMemory, startGame, recordShown, setVerdict, applyOutcome, shownFor, excludeFor, hasKrillion, feedbackFor, TTL_MS: MEMORY_TTL_MS },
     normalizeBase,
     endpointUrl,
